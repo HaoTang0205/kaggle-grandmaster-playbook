@@ -111,6 +111,38 @@ Use this schema when turning retrieved book hits into a useful Kaggle plan or ex
 **Practice Prompt**
 ```
 
+## New Competition Collection Card
+
+```markdown
+## 1. source-name {#section-competition-source}
+
+> 比赛：[competition-slug](competition-url) · 来源：[source-name](source-url) · 类型：collected_experience
+
+- 算法标签:
+- 核心关键词:
+- tricks:
+- 代码证据:
+- 质量分:
+- 收集日期:
+
+### 摘要
+
+### 题面与风险画像
+- metric:
+- data_signals:
+- risk_signals:
+
+### Algorithm Family Hypotheses
+
+### 重点 Trick
+
+### Source Inventory
+| Kind | File | Size |
+|---|---|---:|
+
+### Evidence Notes
+```
+
 Rules:
 
 - Keep code evidence short and source-backed.
@@ -118,3 +150,4 @@ Rules:
 - Infer algorithm families from the competition profile before trusting the user's initial wording.
 - Keep all local paths out of user-facing book or sale-ready notes.
 - When multiple cases agree on a tactic, state the repeated pattern explicitly.
+- New collection cards are staging artifacts; refine them with deeper code/write-up reading before treating them as final book chapters.

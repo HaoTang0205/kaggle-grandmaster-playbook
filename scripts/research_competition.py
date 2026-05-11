@@ -298,9 +298,13 @@ def render_markdown(payload: dict) -> str:
         case = item.get("title") or item.get("source") or item.get("competition_slug")
         lines.append(f"| {idx} | {item['score']} | {case} | {why} | `{item['anchor']}` |")
     lines += ["", "## Agent Next Actions"]
+    lines.append("- Start with a data/metric audit: schema, row counts, IDs/groups/timestamps, target distribution, and metric reproduction.")
+    lines.append("- Establish a trustworthy validation split before optimizing model families.")
     lines.append("- Extract the top 1-3 anchors before writing detailed strategy notes.")
     lines.append("- Translate each historical trick into a current-competition experiment with validation and failure checks.")
     lines.append("- Prefer source-backed code snippets when the extracted section contains code evidence.")
+    lines.append("- Track OOF, fold scores, config, feature list, seed, and submission hash for every serious experiment.")
+    lines.append("- Capture useful new write-ups/code with collect_competition_experience.py before the context is lost.")
     lines.append("- If the match is weak, inspect the data schema first, then rerun retrieval with stronger profile signals.")
     return "\n".join(lines)
 

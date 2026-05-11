@@ -21,7 +21,7 @@ Domain aliases accepted by the search script:
 |---|---|
 | `table`, `gbdt`, `lgbm`, `xgb`, `catboost` | `tabular` |
 | `nlp`, `llm`, `text`, `rag`, `retrieval` | `nlp_llm` |
-| `cv`, `vision`, `image`, `segmentation`, `detection` | `cv_vision` |
+| `vision`, `image`, `computer vision`, `segmentation`, `detection` | `cv_vision` |
 | `time`, `forecast`, `sensor`, `sequence` | `timeseries` |
 | `speech`, `sound`, `birdclef` | `audio` |
 | `oof`, `stacking`, `blend`, `pseudo` | `ensemble` |

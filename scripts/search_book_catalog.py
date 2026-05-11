@@ -23,7 +23,6 @@ DOMAIN_ALIASES = {
     "text": "nlp_llm",
     "rag": "nlp_llm",
     "retrieval": "nlp_llm",
-    "cv": "cv_vision",
     "vision": "cv_vision",
     "image": "cv_vision",
     "segmentation": "cv_vision",
@@ -56,7 +55,7 @@ DOMAIN_TERMS = {
     "system": "repro seed stability submit package inference timeout memory kaggle kernel environment validation 复现 稳定 提交 推理",
     "deep_learning": "deep learning neural network embedding transformer mlp tabular dl 深度学习 神经网络",
     "timeseries": "time series forecasting temporal split lag rolling sensor event sequence 时序 时间序列 传感器",
-    "cv_vision": "cv vision image detection segmentation classification dicom medical 3d tta augment postprocess 视觉 图像 分割 检测",
+    "cv_vision": "computer vision image detection segmentation classification dicom medical 3d tta augment postprocess 视觉 图像 分割 检测",
     "nlp_llm": "nlp llm text transformer deberta bert retrieval rag prompt tokenization embedding qa 文本 大模型 检索",
     "audio": "audio speech spectrogram mel librosa birdclef sound event waveform 音频 语音 声音 频谱",
     "advanced": "graph recommender optimization code golf generative probability simulation 推荐 图 优化 生成 概率",
@@ -89,12 +88,12 @@ QUERY_EXPANSIONS = {
 }
 
 DOMAIN_PRIORS = {
-    "tabular": ["csv", "table", "tabular", "lightgbm", "xgboost", "catboost", "auc", "rmse", "classification", "regression", "表格", "分类", "回归"],
+    "tabular": ["csv", "table", "tabular", "lightgbm", "xgboost", "catboost", "categorical", "numerical columns", "dataframe", "表格", "树模型"],
     "feature": ["feature", "leakage", "target encoding", "missing", "aggregation", "特征", "泄漏", "聚合", "缺失"],
     "ensemble": ["oof", "stack", "blend", "ensemble", "pseudo", "calibration", "集成", "融合", "伪标签"],
     "system": ["submission", "kernel", "timeout", "memory", "inference", "offline", "cv lb", "submit", "提交", "超时", "内存"],
     "timeseries": ["time series", "forecast", "temporal", "lag", "rolling", "sensor", "时序", "时间序列", "预测"],
-    "cv_vision": ["image", "vision", "detection", "segmentation", "dicom", "3d", "mask", "bbox", "图像", "视觉", "分割", "检测"],
+    "cv_vision": ["image", "computer vision", "vision task", "detection", "segmentation", "dicom", "3d", "mask", "bbox", "图像", "视觉", "分割", "检测"],
     "nlp_llm": ["text", "nlp", "llm", "transformer", "bert", "deberta", "rag", "prompt", "文本", "大模型", "检索"],
     "audio": ["audio", "sound", "speech", "spectrogram", "mel", "birdclef", "音频", "语音", "频谱"],
     "rl_game": ["game", "agent", "rl", "self-play", "bandit", "policy", "reinforcement", "博弈", "强化学习", "智能体"],

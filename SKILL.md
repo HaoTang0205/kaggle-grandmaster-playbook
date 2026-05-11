@@ -1,15 +1,17 @@
 ---
 name: kaggle-grandmaster-playbook
-description: "Use when an AI agent is researching a Kaggle competition and should autonomously infer likely task families, retrieve similar historical competitions from the local Kaggle Grandmaster Playbook, rank expert write-up/code evidence, extract transferable tricks, and turn them into experiment hypotheses. Useful even when the user does not know which algorithm to use."
+description: "Use when an AI agent should behave like a Kaggle grandmaster research partner: autonomously infer task families, retrieve similar historical competitions from the local Kaggle Grandmaster Playbook, rank expert write-up/code evidence, extract transferable tricks, propose experiments, collect new competition experience into the same playbook format, and keep improving the local Kaggle knowledge base. Useful even when the user does not know which algorithm to use."
 ---
 
 # Kaggle Grandmaster Playbook
 
-Agentic retrieval layer for a local Kaggle expert-experience book. The goal is not to answer only the user's stated algorithm preference; the goal is to help an AI agent read a competition, infer plausible directions, retrieve historical evidence, and propose experiments.
+Agentic retrieval and memory layer for a local Kaggle expert-experience book. The goal is not to answer only the user's stated algorithm preference; the goal is to help an AI agent read a competition, infer plausible directions, retrieve historical evidence, propose experiments, and save new lessons back into the playbook.
 
 ## Core Principle
 
 Treat user intent as incomplete evidence. A Kaggle user may only know the competition URL, slug, metric, columns, or a vague goal like "improve score". First infer the competition shape, then search the playbook.
+
+Act like a detachable Kaggle research teammate: inspect the problem, form hypotheses, retrieve analogies, propose experiments, identify validation risks, ask for missing data only when necessary, and preserve useful new findings.
 
 ## Inputs To Gather
 
@@ -29,14 +31,14 @@ Use whatever is available; do not block if some fields are missing.
 3. Run autonomous research first:
 
 ```powershell
-python C:\Users\Administrator\.agents\skills\kaggle-grandmaster-playbook\scripts\research_competition.py --slug "competition-slug" --description "problem statement or README excerpt" --metric "AUC" --data "CSV columns or file modalities" --limit 12
+python scripts/research_competition.py --slug "competition-slug" --description "problem statement or README excerpt" --metric "AUC" --data "CSV columns or file modalities" --limit 12
 ```
 
 4. Inspect the returned algorithm-family hypotheses and top historical evidence.
 5. Extract only the strongest 1-3 anchors before giving detailed advice:
 
 ```powershell
-python C:\Users\Administrator\.agents\skills\kaggle-grandmaster-playbook\scripts\extract_book_section.py --anchor section-example-anchor --max-chars 25000
+python scripts/extract_book_section.py --anchor section-example-anchor --max-chars 25000
 ```
 
 6. Produce a research brief: profile, inferred families, retrieved cases, transferable tricks, code evidence when present, and an experiment queue.
@@ -46,7 +48,7 @@ python C:\Users\Administrator\.agents\skills\kaggle-grandmaster-playbook\scripts
 Refresh the catalog after changing the book:
 
 ```powershell
-python C:\Users\Administrator\.agents\skills\kaggle-grandmaster-playbook\scripts\build_book_catalog.py
+python scripts/build_book_catalog.py
 ```
 
 Use repo-relative book files when this skill is published. If the book lives elsewhere, set:
@@ -58,16 +60,32 @@ $env:KAGGLE_GRANDMASTER_BOOK = "path\to\book.md"
 Targeted catalog search is useful after the autonomous brief identifies a direction:
 
 ```powershell
-python C:\Users\Administrator\.agents\skills\kaggle-grandmaster-playbook\scripts\search_book_catalog.py --auto --query "tabular auc target encoding leakage grouped cv" --limit 8
-python C:\Users\Administrator\.agents\skills\kaggle-grandmaster-playbook\scripts\search_book_catalog.py --auto --query "birdclef audio spectrogram sed overlap inference" --limit 8 --json
-python C:\Users\Administrator\.agents\skills\kaggle-grandmaster-playbook\scripts\search_book_catalog.py --slug "lux-ai-season-3" --limit 5
+python scripts/search_book_catalog.py --auto --query "tabular auc target encoding leakage grouped cv" --limit 8
+python scripts/search_book_catalog.py --auto --query "birdclef audio spectrogram sed overlap inference" --limit 8 --json
+python scripts/search_book_catalog.py --slug "lux-ai-season-3" --limit 5
 ```
 
 Use the full archive catalog for maximum recall:
 
 ```powershell
-python C:\Users\Administrator\.agents\skills\kaggle-grandmaster-playbook\scripts\search_book_catalog.py --catalog C:\Users\Administrator\.agents\skills\kaggle-grandmaster-playbook\assets\kaggle_book_catalog_full.json --auto --query "medical segmentation dice tta postprocess" --limit 12
+python scripts/search_book_catalog.py --catalog assets/kaggle_book_catalog_full.json --auto --query "medical segmentation dice tta postprocess" --limit 12
 ```
+
+## Collect New Competition Experience
+
+When a new competition has write-ups, kernels, code, discussion exports, or notes, collect them into a playbook-compatible card before deeper LLM analysis:
+
+```powershell
+python scripts/collect_competition_experience.py --source-dir path\to\new_competition_sources --out collected\competition-card.md --slug "competition-slug" --metric "AUC" --data "CSV + categorical + group id"
+```
+
+Then review the card, run deeper LLM analysis if needed, append it to a book markdown file, and rebuild the catalog:
+
+```powershell
+python scripts/build_book_catalog.py --book book/book.md --out assets/kaggle_book_catalog.json
+```
+
+Use this to keep the skill learning from future contests instead of staying frozen at the original book.
 
 ## Ranking Heuristics
 
@@ -90,6 +108,7 @@ For automated research, return a concise but actionable brief:
 - Source-backed code snippets only when extracted source contains useful code.
 - Experiment queue with validation check, expected signal, and failure mode.
 - Open questions for the next data-inspection or Kaggle CLI step.
+- New-experience collection plan when the current competition has useful write-ups/code not yet in the playbook.
 
 Use `references/output-schema.md` when writing a polished strategy note or expert-experience card.
 
@@ -98,6 +117,7 @@ Use `references/output-schema.md` when writing a polished strategy note or exper
 - `references/chapter-map.md`: domain aliases and chapter routing.
 - `references/search-rules.md`: retrieval strategy for weak/incomplete competition signals.
 - `references/output-schema.md`: output shapes for research briefs and reusable cards.
+- `references/grandmaster-agent-loop.md`: detachable agent operating loop for live competitions.
 
 ## Guardrails
 
@@ -105,4 +125,5 @@ Use `references/output-schema.md` when writing a polished strategy note or exper
 - Do not invent code evidence. If no useful source code exists, write the insight without a code block.
 - Do not expose private API keys, Kaggle credentials, or local absolute paths in public notes.
 - Treat the playbook as historical evidence, not a guarantee of leaderboard performance.
+- Prefer relative paths from the skill/repository root in commands and documentation.
 - For live Kaggle operations, combine this skill with the regular `kaggle` skill for CLI downloads, notebooks, datasets, and submissions.

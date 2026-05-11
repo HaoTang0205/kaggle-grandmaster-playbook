@@ -19,6 +19,9 @@ Thumbs.db
 out/
 data/
 cache/
+tmp/
+tmp_sample_sources/
+collected/
 _page_bg_cache/
 generated_images/
 
