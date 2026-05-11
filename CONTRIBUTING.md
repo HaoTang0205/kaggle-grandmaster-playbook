@@ -4,6 +4,8 @@ Thanks for helping improve the Kaggle Grandmaster Playbook.
 
 This project is especially interested in making AI agents better at autonomous Kaggle research: reading a competition, inferring likely solution families, retrieving historical evidence, and producing useful experiments.
 
+The current automation is a demo, so contributions that replace rough heuristics with measurable improvements are especially valuable. Please feel free to fork, simplify, rebuild, or connect the workflow to a different agent runtime, LLM API, crawler, vector store, or evaluation harness.
+
 ## Good Issue Reports
 
 Please include:
@@ -27,6 +29,8 @@ Reason: audio modality should dominate; CV should appear only as spectrogram ana
 
 - Add or improve domain inference rules in `scripts/research_competition.py`.
 - Improve ranking in `scripts/search_book_catalog.py`.
+- Add benchmark profiles that make retrieval quality measurable.
+- Add adapters for Kaggle CLI metadata, downloaded kernels, discussion/write-up exports, or notebook-to-Python conversion.
 - Add tests or reproducible examples for bad retrieval cases.
 - Improve `references/search-rules.md` and `references/output-schema.md`.
 - Add cleaner book export and sanitization workflows.

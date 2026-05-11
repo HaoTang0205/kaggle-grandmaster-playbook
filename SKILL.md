@@ -7,6 +7,8 @@ description: "Use when an AI agent should behave like a Kaggle grandmaster resea
 
 Agentic retrieval and memory layer for a local Kaggle expert-experience book. The goal is not to answer only the user's stated algorithm preference; the goal is to help an AI agent read a competition, infer plausible directions, retrieve historical evidence, propose experiments, and save new lessons back into the playbook.
 
+This skill is a demo/reference implementation of automated Kaggle research. Use it as a strong starting point, but expect to tune the retrieval rules, ranking heuristics, source collection, and LLM analysis for the user's environment and competition style.
+
 ## Core Principle
 
 Treat user intent as incomplete evidence. A Kaggle user may only know the competition URL, slug, metric, columns, or a vague goal like "improve score". First infer the competition shape, then search the playbook.
@@ -125,5 +127,6 @@ Use `references/output-schema.md` when writing a polished strategy note or exper
 - Do not invent code evidence. If no useful source code exists, write the insight without a code block.
 - Do not expose private API keys, Kaggle credentials, or local absolute paths in public notes.
 - Treat the playbook as historical evidence, not a guarantee of leaderboard performance.
+- Treat autonomous decisions as hypotheses; ask for data inspection or ablation when evidence is weak.
 - Prefer relative paths from the skill/repository root in commands and documentation.
 - For live Kaggle operations, combine this skill with the regular `kaggle` skill for CLI downloads, notebooks, datasets, and submissions.

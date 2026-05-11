@@ -2,6 +2,8 @@
 
 Use this loop when the agent is expected to operate with minimal user direction.
 
+This loop is a demo operating pattern. It should be treated as a configurable scaffold for automated research, not as a complete substitute for competition-specific data inspection, ablation, and leaderboard discipline.
+
 ## 1. Competition Intake
 
 - Capture slug, title, metric, deadline/status, data modalities, target, sample submission, runtime constraints, and known public kernels.
@@ -19,6 +21,7 @@ Use this loop when the agent is expected to operate with minimal user direction.
 - Run `scripts/research_competition.py` with the profile.
 - Search exact slug first when available, then same modality+metric, then same validation hazard, then adjacent-domain analogies.
 - Extract only the strongest sections and convert them into experiments, not generic advice.
+- If retrieval looks shallow or off-topic, rewrite the profile and queries before spending LLM calls on detailed analysis.
 
 ## 4. Baseline And Evidence
 

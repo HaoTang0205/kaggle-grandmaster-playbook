@@ -4,6 +4,12 @@ An agentic Kaggle research skill built from a local book of competition write-up
 
 The goal is simple: when an AI agent sees a new Kaggle competition, it should not wait for the user to know the right algorithm. It should infer the competition shape, retrieve similar historical cases, rank the most useful evidence, turn that into experiment hypotheses, and collect new lessons back into the playbook.
 
+## Project Status
+
+This repository is a working demo of an automated Kaggle research memory system, not a finished product or a hands-off competition solver. The current automation is intentionally simple: it uses heuristic domain inference, catalog retrieval, and staged experience-card collection so other users can inspect, fork, replace, and improve each part.
+
+You are encouraged to adapt it to your own agent stack, crawler, LLM provider, vector database, reranker, evaluation set, and competition workflow. If you find better recall/ranking rules or a cleaner way to collect new high-quality competition experience, please open an issue or pull request.
+
 ## What This Is For
 
 - Autonomous Kaggle competition research.
@@ -113,11 +119,13 @@ Large files are intentional. If GitHub rejects future larger artifacts, use Git 
 
 ## Current Limitations
 
+- The automated research loop is a demo/reference implementation. It should be customized before being trusted for serious competitions.
 - This project is still an early research skill, not a guaranteed autonomous Kaggle winner.
 - The crawler/downloader pipeline that produced the original book is not fully generalized here.
 - Some environments may need path, Python, encoding, or shell adjustments.
 - Ranking is heuristic and may miss good analogies or over-rank familiar patterns.
 - The new-competition collection script creates a first-pass card; deeper LLM analysis is still recommended before adding it to the final book.
+- The repository has not yet been adapted for every operating system, agent runtime, Kaggle account setup, or LLM API style.
 - Bugs are expected. Issues and ranking-failure examples are especially welcome.
 
 ## Skill Usage
@@ -136,6 +144,8 @@ Feedback is very welcome. Useful contributions include:
 
 - Better domain inference rules.
 - Improved ranking features for modality fit, validation hazards, or code evidence.
+- Small benchmark sets that show when retrieval/ranking succeeds or fails.
+- Integrations with Kaggle CLI outputs, browser-collected write-ups, notebook exports, or vector search.
 - New Kaggle cases with clean metadata.
 - Corrections to extracted tricks or source attribution.
 - Scripts for converting more notebook/code artifacts into analyzable Python.
