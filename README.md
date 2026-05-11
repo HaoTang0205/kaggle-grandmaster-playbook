@@ -1,5 +1,7 @@
 # Kaggle Grandmaster Playbook
 
+[中文说明](README.zh-CN.md)
+
 An agentic Kaggle research skill built from a local book of competition write-ups, high-score notebooks, code evidence, and transferable tricks.
 
 The goal is simple: when an AI agent sees a new Kaggle competition, it should not wait for the user to know the right algorithm. It should infer the competition shape, retrieve similar historical cases, rank the most useful evidence, turn that into experiment hypotheses, and collect new lessons back into the playbook.
