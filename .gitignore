@@ -1,0 +1,30 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+.env
+.env.*
+kaggle.json
+*.log
+*.tmp
+~$*
+.DS_Store
+Thumbs.db
+
+# Local-only exports and caches.
+out/
+data/
+cache/
+_page_bg_cache/
+generated_images/
+
+# Keep curated public book artifacts tracked intentionally.
+!book/book.md
+!book/book.pdf
+!book_full/book.md
+!assets/kaggle_book_catalog.json
+!assets/kaggle_book_catalog_full.json

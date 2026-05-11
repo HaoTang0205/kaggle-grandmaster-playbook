@@ -1,0 +1,120 @@
+# Recommended Output Schema
+
+Use this schema when turning retrieved book hits into a useful Kaggle plan or expert-experience card.
+
+## Agentic Research Brief
+
+```markdown
+## Competition Profile
+- slug:
+- metric:
+- data signals:
+- constraints:
+- inferred domains:
+
+## Algorithm Family Hypotheses
+| Family | Why Plausible | What To Check First |
+|---|---|---|
+
+## Historical Evidence Map
+| Rank | Source Case | Match Signal | Transferable Pattern | Anchor |
+|---:|---|---|---|---|
+
+## Transferable Tricks
+- Trick:
+  Current-condition trigger:
+  Why it may work:
+  Implementation sketch:
+  Validation check:
+  Failure mode:
+
+## Code Evidence
+```python
+# Include only source-backed snippets that exist in extracted sections.
+```
+
+## Experiment Queue
+1. Experiment:
+   Historical evidence:
+   Expected signal:
+   Validation:
+   Stop condition:
+```
+
+## Competition Strategy Note
+
+```markdown
+## Competition Profile
+- slug:
+- task type:
+- metric:
+- data risks:
+- likely validation split:
+- closest book domains:
+
+## Retrieved Experience
+| Rank | Book Case | Why It Matches | Useful Pattern |
+|---:|---|---|---|
+
+## High-ROI Experiments
+1. Experiment:
+   Why:
+   Evidence:
+   Validation:
+   Risk:
+
+## Tricks To Try
+- Trick:
+  When it helps:
+  How to implement:
+  What to monitor:
+
+## Code Evidence
+```python
+# Include only code that exists in the extracted source.
+```
+
+## Validation And Submission Checklist
+- Local validation:
+- Leakage checks:
+- Ablation:
+- Submission safety:
+```
+
+## Expert-Experience Card
+
+```markdown
+### Title
+- domains:
+- algo_tags:
+- source_case:
+- competition_slug:
+- index_keywords:
+- problem_signals:
+
+**Essence**
+
+**Why It Works**
+
+**When To Use**
+
+**Implementation Pattern**
+
+**Evidence**
+
+```python
+# Source-backed code snippet if available.
+```
+
+**Failure Modes**
+
+**Practice Prompt**
+```
+
+Rules:
+
+- Keep code evidence short and source-backed.
+- Prefer "what to try next" over generic description.
+- Infer algorithm families from the competition profile before trusting the user's initial wording.
+- Keep all local paths out of user-facing book or sale-ready notes.
+- When multiple cases agree on a tactic, state the repeated pattern explicitly.
