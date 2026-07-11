@@ -15,18 +15,28 @@ from grandmaster_core import CACHE_DIR_ENV, default_catalog_paths, safe_public_u
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "assets" / "knowledge-pack-manifest.json"
+TEXT_SUFFIXES = {".md", ".json", ".csv", ".txt", ".yaml", ".yml", ".toml", ".py"}
 PRIVATE_PATH = re.compile(r"(?<![A-Za-z0-9])(?:[A-Za-z]:[\\/]|/(?:Users|home)/[^/\s]+/)")
 CREDENTIAL = re.compile(
     r"(?i)(?:\bsk-[A-Za-z0-9_-]{20,}\b|\b(?:OPENAI_API_KEY|ANTHROPIC_AUTH_TOKEN|KAGGLE_KEY)\s*[:=]\s*[^<\s])"
 )
 
 
-def digest(path: Path) -> str:
+def content_fingerprint(path: Path) -> tuple[int, str]:
     value = hashlib.sha256()
-    with path.open("rb") as handle:
-        while chunk := handle.read(1024 * 1024):
-            value.update(chunk)
-    return value.hexdigest()
+    size = 0
+    if path.suffix.lower() in TEXT_SUFFIXES:
+        with path.open("r", encoding="utf-8", errors="surrogateescape", newline=None) as handle:
+            while chunk := handle.read(1024 * 1024):
+                encoded = chunk.encode("utf-8", errors="surrogateescape")
+                size += len(encoded)
+                value.update(encoded)
+    else:
+        with path.open("rb") as handle:
+            while chunk := handle.read(1024 * 1024):
+                size += len(chunk)
+                value.update(chunk)
+    return size, value.hexdigest()
 
 
 def result(name: str, status: str, detail) -> dict:
@@ -165,7 +175,8 @@ def check_manifest() -> dict:
             target = mismatches if item.get("required_for_core") else optional_missing
             target.append({"path": item["path"], "error": "missing"})
             continue
-        if path.stat().st_size != item["size_bytes"] or digest(path) != item["sha256"]:
+        size, content_hash = content_fingerprint(path)
+        if size != item["size_bytes"] or content_hash != item["sha256"]:
             mismatches.append({"path": item["path"], "error": "size or SHA-256 mismatch"})
     status = "fail" if mismatches else "warn" if optional_missing else "pass"
     return result("knowledge_manifest", status, {

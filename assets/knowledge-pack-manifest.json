@@ -1,6 +1,7 @@
 {
   "schema_version": 1,
   "pack_name": "kaggle-grandmaster-playbook-knowledge",
+  "content_normalization": "LF newlines for UTF-8 text; raw bytes for binary files",
   "portability": {
     "paths": "relative_to_skill_root",
     "catalog_override_env": "KAGGLE_GM_CATALOGS",
@@ -18,8 +19,8 @@
       "path": "book/book.md",
       "role": "curated_book",
       "required_for_core": true,
-      "size_bytes": 12510676,
-      "sha256": "b701ed829a9aa0332d9fec4bac83da81651612d9575a7fe7bb5d0dde6b14a338"
+      "size_bytes": 12373330,
+      "sha256": "78603540e8e2eaaa78c8d6c7d19686da0701b33879ca9d52e31b8d1de3aed08f"
     },
     {
       "path": "book/book.pdf",
@@ -32,29 +33,29 @@
       "path": "book_full/book.md",
       "role": "full_archive",
       "required_for_core": false,
-      "size_bytes": 85680551,
-      "sha256": "e4208cc61f2ed7b40d2804504f20b361d9a73d154375348e2b5752ec4507cf6d"
+      "size_bytes": 84753711,
+      "sha256": "78ce13ec42f1e2a5c2a6d4011babc2dfc05428d55535a62029ff4d63c2e66348"
     },
     {
       "path": "assets/kaggle_book_catalog.json",
       "role": "curated_catalog",
       "required_for_core": true,
-      "size_bytes": 3490124,
-      "sha256": "8efb5f46aa32a47813913bb6ebd1b8a23d6229b5fd15980fb01345f6fff7ae60"
+      "size_bytes": 3447286,
+      "sha256": "719553b89b860d3a0064cd7c81e1c6b46c7b183fcb5229478bbacd86f5b33dda"
     },
     {
       "path": "assets/kaggle_book_catalog_full.json",
       "role": "full_catalog",
       "required_for_core": false,
-      "size_bytes": 29861027,
-      "sha256": "2e959649615ff79b789fd1510677f6b73eb0662e9214c43f88d0e04df56b8fe9"
+      "size_bytes": 29481352,
+      "sha256": "53fe7594ee5c7ba2842f1f75913d4affa87aa34f145308cc5e259ab0df7dcf10"
     },
     {
       "path": "assets/learned_experience_catalog.json",
       "role": "learned_catalog",
       "required_for_core": true,
-      "size_bytes": 12342,
-      "sha256": "d54140af76997985c0603ae90018063a8bdeae4333cdcf6cd625ea4bfa21d06c"
+      "size_bytes": 12180,
+      "sha256": "9ad6f8ce60e375046e38337f3f309232454253751be7fb69efa2766cf25cc114"
     },
     {
       "path": "CONTENT_LICENSE.md",

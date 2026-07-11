@@ -8,14 +8,24 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUT = ROOT / "assets" / "knowledge-pack-manifest.json"
+TEXT_SUFFIXES = {".md", ".json", ".csv", ".txt", ".yaml", ".yml", ".toml", ".py"}
 
 
-def sha256(path: Path) -> str:
+def content_fingerprint(path: Path) -> tuple[int, str]:
     digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        while chunk := handle.read(1024 * 1024):
-            digest.update(chunk)
-    return digest.hexdigest()
+    size = 0
+    if path.suffix.lower() in TEXT_SUFFIXES:
+        with path.open("r", encoding="utf-8", errors="surrogateescape", newline=None) as handle:
+            while chunk := handle.read(1024 * 1024):
+                encoded = chunk.encode("utf-8", errors="surrogateescape")
+                size += len(encoded)
+                digest.update(encoded)
+    else:
+        with path.open("rb") as handle:
+            while chunk := handle.read(1024 * 1024):
+                size += len(chunk)
+                digest.update(chunk)
+    return size, digest.hexdigest()
 
 
 def selected_files() -> list[tuple[Path, str, bool]]:
@@ -41,16 +51,18 @@ def build_manifest() -> dict:
             if required:
                 raise FileNotFoundError(path)
             continue
+        size, content_hash = content_fingerprint(path)
         files.append({
             "path": path.relative_to(ROOT).as_posix(),
             "role": role,
             "required_for_core": required,
-            "size_bytes": path.stat().st_size,
-            "sha256": sha256(path),
+            "size_bytes": size,
+            "sha256": content_hash,
         })
     return {
         "schema_version": 1,
         "pack_name": "kaggle-grandmaster-playbook-knowledge",
+        "content_normalization": "LF newlines for UTF-8 text; raw bytes for binary files",
         "portability": {
             "paths": "relative_to_skill_root",
             "catalog_override_env": "KAGGLE_GM_CATALOGS",
