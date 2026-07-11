@@ -1,0 +1,3 @@
+row_id,user_id,event_time,category,value
+5,u4,2025-02-01,a,0.3
+6,u5,2025-02-02,b,0.8

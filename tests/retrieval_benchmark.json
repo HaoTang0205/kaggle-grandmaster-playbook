@@ -1,0 +1,106 @@
+[
+  {
+    "name": "grouped-tabular-auc",
+    "description": "CSV binary classification with categorical columns, repeated customer_id and possible train test shift",
+    "metric": "AUC",
+    "data": "train.csv test.csv customer_id categorical target",
+    "expected_domain": "tabular",
+    "expected_terms": ["lightgbm", "catboost", "xgb", "target encoding", "fraud"],
+    "min_term_hits": 2
+  },
+  {
+    "name": "bird-audio",
+    "description": "weakly labeled bird soundscape multi-label audio classification with recording groups",
+    "metric": "macro AUC",
+    "data": "ogg audio metadata recording_id primary_label",
+    "expected_domain": "audio",
+    "expected_terms": ["birdclef", "spectrogram", "sound event", "audio"],
+    "min_term_hits": 2,
+    "forbidden_slugs": ["playground-series-s4e10"]
+  },
+  {
+    "name": "medical-segmentation",
+    "description": "medical DICOM patient-level image segmentation with tiled inference",
+    "metric": "Dice",
+    "data": "DICOM images RLE masks patient_id",
+    "expected_domain": "cv_vision",
+    "expected_terms": ["segmentation", "unet", "dice", "mask"],
+    "min_term_hits": 2
+  },
+  {
+    "name": "forecasting",
+    "description": "grouped retail demand forecasting with timestamps and future horizon",
+    "metric": "RMSE",
+    "data": "store_id item_id date sales",
+    "expected_domain": "timeseries",
+    "expected_terms": ["time series", "lag", "rolling", "forecast"],
+    "min_term_hits": 2
+  },
+  {
+    "name": "nlp-ordinal",
+    "description": "long text essay scoring with author groups and ordinal labels",
+    "metric": "QWK",
+    "data": "essay_id full_text score author_id",
+    "expected_domain": "nlp_llm",
+    "expected_terms": ["deberta", "bert", "transformer", "text"],
+    "min_term_hits": 2
+  },
+  {
+    "name": "simulation-game",
+    "description": "partially observable multi-agent grid game with replay files and self-play evaluation",
+    "metric": "win rate",
+    "data": "official simulator observations actions replay json",
+    "expected_domain": "rl_game",
+    "expected_terms": ["self-play", "policy", "replay", "lux"],
+    "min_term_hits": 2
+  },
+  {
+    "name": "orbit-wars-exact",
+    "slug": "orbit-wars",
+    "description": "multi-agent self-play PPO with entity observations and strict CPU latency",
+    "metric": "online skill rating",
+    "data": "planets fleets comets replays structured actions",
+    "constraints": "one second per turn CPU package limit",
+    "expected_domain": "rl_game",
+    "expected_slug": "orbit-wars",
+    "max_expected_rank": 1,
+    "expected_terms": ["self-play", "target entity", "replay-level parity", "quantization"],
+    "min_term_hits": 3
+  },
+  {
+    "name": "chinese-structured-action-transfer",
+    "description": "多智能体强化学习，动作空间需要先选择候选目标对象，再决定连续强度或数量",
+    "query": ["离散目标与连续参数如何分解", "源目标注意力的实现与失败条件"],
+    "metric": "win rate",
+    "data": "variable length entities and legal target mask",
+    "explicit_domain": "rl_game",
+    "expected_slug": "orbit-wars",
+    "max_expected_rank": 3,
+    "expected_terms": ["structured action factorization", "target entity", "logistic mixture", "source-target attention"],
+    "min_term_hits": 2
+  },
+  {
+    "name": "birdclef-source-ranking",
+    "slug": "birdclef-2025",
+    "description": "rare bird call detection in long soundscapes with weak clip labels",
+    "query": "which source competitions explain spectrogram sampling and weak-label failure modes",
+    "metric": "macro AUC",
+    "data": "ogg audio recording_id primary_label",
+    "expected_domain": "audio",
+    "expected_slug": "birdclef-2025",
+    "max_expected_rank": 2,
+    "expected_terms": ["birdclef", "spectrogram", "audio"],
+    "min_term_hits": 2
+  },
+  {
+    "name": "synthetic-tabular-negative-control",
+    "description": "synthetic tabular regression with mixed numeric categorical columns and external original data",
+    "query": "fold-safe category encoding and residual ensemble under RMSE",
+    "metric": "RMSE",
+    "data": "CSV train test original labeled dataset",
+    "expected_domain": "tabular",
+    "expected_terms": ["catboost", "lightgbm", "cross validation", "external data"],
+    "min_term_hits": 2,
+    "forbidden_slugs": ["birdclef-2025", "lux-ai-season-3", "orbit-wars"]
+  }
+]

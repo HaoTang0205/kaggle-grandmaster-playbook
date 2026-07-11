@@ -1,0 +1,563 @@
+{
+  "schema_version": 1,
+  "card_type": "external_source_competition",
+  "card_id": "orbit-wars-1st-place-scaling-rl-a60ec580",
+  "card_hash": "c9e4d8ef58b07f1a8774b76fd1481d16f41cefcf4f589f113d2d1c79d46bb9b3",
+  "revision": 1,
+  "status": "promoted",
+  "created_at": "2026-07-11T00:00:00+00:00",
+  "promoted_at": "2026-07-11T00:00:00+00:00",
+  "competition": {
+    "slug": "orbit-wars",
+    "title": "Orbit Wars",
+    "url": "https://www.kaggle.com/competitions/orbit-wars",
+    "metric": "Ongoing Gaussian skill rating from ladder game outcomes; win margin does not affect rating updates",
+    "metric_direction": "higher",
+    "final_rank": "1 on leaderboard captured 2026-07-11",
+    "leaderboard_score": 1865.1,
+    "medal": "Author-published 1st-place solution write-up"
+  },
+  "task_fingerprint": {
+    "domains": [
+      "rl_game",
+      "deep_learning",
+      "system"
+    ],
+    "mechanisms": [
+      "self_play_scaling",
+      "simulation_and_opponent_evaluation",
+      "entity_transformer_representation",
+      "structured_action_factorization",
+      "teacher_distillation",
+      "compute_efficiency",
+      "deployment_aware_model_selection"
+    ],
+    "metric_family": "online_multiagent_skill_rating",
+    "validation_risks": [
+      "opponent_distribution_shift",
+      "self_play_overfitting",
+      "multiagent_nonstationarity",
+      "simulator_mismatch",
+      "rating_uncertainty",
+      "latency_failure"
+    ],
+    "runtime_constraints": [
+      "1 second per turn",
+      "60 seconds total overage time",
+      "CPU inference",
+      "100 MiB submission limit"
+    ],
+    "data": "Variable-length planet, fleet and comet entities in 1v1 and four-player FFA episodes"
+  },
+  "summary": "The leading Orbit Wars solution scaled pure self-play PPO to a 200M-parameter entity transformer and roughly 15B environment steps. Its strongest reusable lesson is systems-level co-design: structured target actions, one-pass multi-player modeling, a Rust vector environment verified against Kaggle replays, last-best checkpoint evaluation and distillation, distributed training, and deployment-aware quantization/fallback. The write-up also supplies unusually valuable negative evidence on gamma=1 stalling, matchup-distribution shift, action masks, three-bit quantization and missing league play.",
+  "validated_lessons": [
+    {
+      "id": "L001",
+      "title": "Scale model capacity only after simulator and PPO correctness are established",
+      "verdict": "supported_by_author_writeup_and_current_code",
+      "confidence": "medium",
+      "mechanism": "A high-throughput simulator and expressive transformer let additional model capacity and self-play steps absorb complex game dynamics that a small hand-engineered policy could not.",
+      "implementation": "Prototype with 1-5M parameter models, then scale to a 200M, 38-layer, 768-dimensional, 16-head transformer trained for about 15B self-play steps with distributed PPO.",
+      "effect": {
+        "author_report": "Performance improved markedly at each model-size increase; the final agent reached the top leaderboard position.",
+        "training_cost": "Approximately 2400 B200 GPU-hours for the final model."
+      },
+      "transfer_conditions": [
+        "Simulator throughput is high and parity-tested",
+        "Checkpoint evaluation is stable enough to detect progress",
+        "Compute and deployment compression budgets are available"
+      ],
+      "failure_conditions": [
+        "Low-budget settings cannot infer that the same scaling curve will hold",
+        "Scaling before validating the environment can amplify simulator or reward bugs"
+      ],
+      "minimal_next_test": "Hold the simulator and training recipe fixed and compare a small geometric model-size ladder using a fixed opponent matrix.",
+      "evidence_anchors": [
+        "docs/write-up.md#scaling-the-model"
+      ],
+      "source_urls": [
+        "https://www.kaggle.com/competitions/orbit-wars/writeups/1st-place-solution-scaling-reinforcement-learnin",
+        "https://github.com/IsaiahPressman/kaggle-orbit-wars"
+      ],
+      "artifact_ref": "configs/stateless_200m.yaml",
+      "code_paths": [
+        "configs/stateless_200m.yaml",
+        "configs/model/stateless_transformer_200m_d38.yaml",
+        "python/owl/train/distributed.py"
+      ]
+    },
+    {
+      "id": "L002",
+      "title": "Keep observations low-level while factorizing an intractable action space",
+      "verdict": "supported_by_author_comparison_and_code",
+      "confidence": "medium",
+      "mechanism": "Selecting a semantic target entity removes difficult continuous geometric search while retaining entity-level state information and a continuous fleet-size decision.",
+      "implementation": "Replace raw launch-angle prediction with source-target attention over valid planets, then condition an eight-component truncated logistic mixture on the selected target to sample fleet size.",
+      "effect": {
+        "author_report": "The raw-angle policy remained far from competitive; the target-based action representation became the final approach."
+      },
+      "transfer_conditions": [
+        "Actions naturally decompose into candidate selection and magnitude",
+        "A deterministic converter can map the semantic target back to legal low-level controls"
+      ],
+      "failure_conditions": [
+        "A poor candidate generator can hide valid actions",
+        "Target abstraction may remove strategically important continuous degrees of freedom"
+      ],
+      "minimal_next_test": "Compare raw controls and target-factorized actions under the same model size, environment steps and opponent set.",
+      "evidence_anchors": [
+        "docs/write-up.md#keeping-the-observation-and-action-encoding-low-level"
+      ],
+      "source_urls": [
+        "https://github.com/IsaiahPressman/kaggle-orbit-wars"
+      ],
+      "artifact_ref": "python/owl/model/actor/discrete_targets.py",
+      "code_paths": [
+        "python/owl/model/actor/discrete_targets.py:550",
+        "python/owl/model/actor/discrete_targets.py:643",
+        "python/owl/model/actor/logistic_mixture.py"
+      ],
+      "code_evidence_ids": [
+        "CE001"
+      ]
+    },
+    {
+      "id": "L003",
+      "title": "Use a shared entity-token transformer for all players",
+      "verdict": "supported_by_author_efficiency_report_and_code",
+      "confidence": "medium",
+      "mechanism": "Player, global, actor-plan, critic-value and scratch tokens share context with all entities, allowing symmetric multi-player decisions and values from one trunk execution.",
+      "implementation": "Project planets, fleets and comets to a shared hidden dimension; concatenate player/global/scratch/actor/critic tokens; run one transformer; decode each player's actor and winner probability.",
+      "effect": {
+        "author_report": "All players could be evaluated in one forward pass, saving roughly 2-4x compute relative to one observation per player."
+      },
+      "transfer_conditions": [
+        "Players share rules and observation schema",
+        "Entity order can be represented with masks rather than fixed slots"
+      ],
+      "failure_conditions": [
+        "Asymmetric roles may need explicit role tokens or separate adapters",
+        "Quadratic attention cost can dominate when entity counts become very large"
+      ],
+      "minimal_next_test": "Compare one shared multi-player forward against per-player inference at equal parameters and measure throughput plus policy quality.",
+      "evidence_anchors": [
+        "docs/write-up.md#model-architecture"
+      ],
+      "source_urls": [
+        "https://github.com/IsaiahPressman/kaggle-orbit-wars"
+      ],
+      "artifact_ref": "python/owl/model/stateless_transformer_v1.py",
+      "code_paths": [
+        "python/owl/model/stateless_transformer_v1.py:291",
+        "python/owl/model/stateless_transformer_v1.py:325",
+        "python/owl/model/stateless_transformer_v1.py:596"
+      ],
+      "code_evidence_ids": [
+        "CE002"
+      ]
+    },
+    {
+      "id": "L004",
+      "title": "Rewrite the simulator only with replay-level parity gates",
+      "verdict": "supported_by_code_and_author_writeup",
+      "confidence": "high",
+      "mechanism": "A Rust vector environment increases rollout throughput, while reference-transition tests prevent silent divergence from Kaggle's Python game implementation.",
+      "implementation": "Run environments and observation writes in parallel with Rayon, reuse pinned Python buffers, and replay real Kaggle transitions through the Rust rules engine before comparing complete state and terminal results.",
+      "effect": {
+        "author_report": "The Python environment was too slow for RL; the Rust rewrite enabled large-scale parallel self-play."
+      },
+      "transfer_conditions": [
+        "Reference transitions or replays can be captured",
+        "The accelerated simulator exposes deterministic injection points for random events"
+      ],
+      "failure_conditions": [
+        "A fast simulator without parity coverage can optimize the wrong game",
+        "Sparse fixtures may miss rare rule branches"
+      ],
+      "minimal_next_test": "Require parity on multiple player counts and every rare event before accepting a simulator optimization.",
+      "evidence_anchors": [
+        "docs/write-up.md#environment-rewrite"
+      ],
+      "source_urls": [
+        "https://github.com/IsaiahPressman/kaggle-orbit-wars"
+      ],
+      "artifact_ref": "src/rules_engine/replay_tests.rs",
+      "code_paths": [
+        "src/rl/vec_env.rs:286",
+        "src/rules_engine/replay_tests.rs:95",
+        "src/rules_engine/replay_tests.rs:273",
+        "python/owl/rl.py:339"
+      ],
+      "code_evidence_ids": [
+        "CE003"
+      ]
+    },
+    {
+      "id": "L005",
+      "title": "Promote checkpoints by opponent wins and reuse last-best as a teacher",
+      "verdict": "supported_by_code_and_author_writeup",
+      "confidence": "medium",
+      "mechanism": "A moving last-best checkpoint supplies a concrete self-play progress gate and a stabilizing policy/value target without introducing external demonstrations.",
+      "implementation": "Evaluate current versus last-best in mixed 1v1 and 2v2 games; replace last-best above 70% win rate; add teacher action KL and winner-distribution cross-entropy terms to PPO.",
+      "effect": {
+        "checkpoint_threshold": 0.7,
+        "author_report": "The terms were used to stabilize training."
+      },
+      "transfer_conditions": [
+        "Head-to-head or team evaluation is representative",
+        "The game is not strongly non-transitive over the selected opponent set"
+      ],
+      "failure_conditions": [
+        "One last-best opponent can miss strategic cycles",
+        "Four-player equilibria may require a league or historical opponent pool"
+      ],
+      "minimal_next_test": "Compare last-best-only evaluation with an opponent matrix spanning several historical checkpoints.",
+      "evidence_anchors": [
+        "docs/write-up.md#reinforcement-learning-with-proximal-policy-optimization"
+      ],
+      "source_urls": [
+        "https://github.com/IsaiahPressman/kaggle-orbit-wars"
+      ],
+      "artifact_ref": "scripts/run_ppo.py",
+      "code_paths": [
+        "scripts/run_ppo.py:70",
+        "scripts/run_ppo.py:443",
+        "python/owl/train/ppo.py:1478"
+      ],
+      "code_evidence_ids": [
+        "CE004"
+      ]
+    },
+    {
+      "id": "L006",
+      "title": "Co-design training, compression and runtime fallback",
+      "verdict": "supported_by_code_and_author_measurements",
+      "confidence": "medium",
+      "mechanism": "Submission quality is maximized by optimizing the complete constrained agent rather than the uncompressed training checkpoint in isolation.",
+      "implementation": "Use groupwise four-bit NormalFloat checkpoint compression, dynamic int8 CPU linear layers, bounded visible fleets and an overage-triggered 5M fallback model.",
+      "effect": {
+        "slow_game_fraction": "About 8% of four-player games required fallback on particularly slow CPUs.",
+        "fallback_conversion": "The author reported the 5M fallback converted 100% of positions the critic considered winning.",
+        "quantized_head_to_head": "The four-bit model won about 40% against the unquantized model; three-bit quality loss outweighed the benefit of a larger model."
+      },
+      "transfer_conditions": [
+        "The platform has strict package and per-action latency constraints",
+        "A smaller fallback policy can be packaged and initialized safely"
+      ],
+      "failure_conditions": [
+        "Aggressive entity pruning can remove decisive state",
+        "A critic-based fallback assumption can fail on poorly calibrated values",
+        "Lower-bit compression can lose more policy quality than extra parameters recover"
+      ],
+      "minimal_next_test": "Benchmark full agents under the real CPU, package and timeout limits using replay-level action agreement and head-to-head games.",
+      "evidence_anchors": [
+        "docs/write-up.md#navigating-submission-constraints"
+      ],
+      "source_urls": [
+        "https://github.com/IsaiahPressman/kaggle-orbit-wars"
+      ],
+      "artifact_ref": "python/owl/agent/agent.py",
+      "code_paths": [
+        "python/owl/agent/agent.py:235",
+        "python/owl/agent/agent.py:373",
+        "python/owl/agent/agent.py:439",
+        "python/owl/checkpoint_quantization.py:812"
+      ],
+      "code_evidence_ids": [
+        "CE005"
+      ]
+    },
+    {
+      "id": "L007",
+      "title": "Use coding agents as an implementation multiplier, not a research oracle",
+      "verdict": "supported_by_author_reflection_and_discussion",
+      "confidence": "medium",
+      "mechanism": "Agentic coding sharply reduces implementation latency in a greenfield, low-stakes competition, but architecture, experiments and branch selection still require human research judgment.",
+      "implementation": "Write explicit specifications and generated documentation, isolate risky branches, and discard failed codebases instead of endlessly layering experiments into one mutable tree.",
+      "effect": {
+        "author_report": "Preliminary experiments were running within a couple of weeks, but agent suggestions and creativity were not substitutes for thinking.",
+        "discussion_report": "Another participant reported that continually extending one agentic codebase eventually became unmanageable."
+      },
+      "transfer_conditions": [
+        "Greenfield or isolated competition code",
+        "Cheap failure and strong automated tests"
+      ],
+      "failure_conditions": [
+        "Production systems with users, compatibility constraints or expensive mistakes",
+        "No branch isolation, review gates or deletion policy"
+      ],
+      "minimal_next_test": "Compare isolated worktree branches against one cumulative branch on defect rate, experiment turnaround and rollback cost.",
+      "evidence_anchors": [
+        "docs/write-up.md#agentic-software-development",
+        "Kaggle write-up discussion"
+      ],
+      "source_urls": [
+        "https://www.kaggle.com/competitions/orbit-wars/writeups/1st-place-solution-scaling-reinforcement-learnin"
+      ],
+      "artifact_ref": "AGENTS.md",
+      "code_paths": [
+        "AGENTS.md",
+        "docs/pr-checklist.md"
+      ]
+    }
+  ],
+  "negative_lessons": [
+    {
+      "id": "N001",
+      "title": "Undiscounted returns encouraged stalling",
+      "verdict": "author_reported_failure",
+      "confidence": "medium",
+      "mechanism": "With gamma=1, a winning policy had no incentive to finish early, so already-decided episodes consumed training compute.",
+      "implementation": "The 200M config uses gamma=1.0 to keep the multiplayer winner-probability critic well-defined.",
+      "failure_conditions": [
+        "Long terminal horizons with sparse outcome rewards"
+      ],
+      "minimal_next_test": "Test early truncation or surrender rules while verifying that policy ranking remains aligned with true wins.",
+      "evidence_anchors": [
+        "docs/write-up.md#stalling"
+      ],
+      "artifact_ref": "configs/stateless_200m.yaml"
+    },
+    {
+      "id": "N002",
+      "title": "Short-term ladder composition was mistaken for the final opponent distribution",
+      "verdict": "author_reported_failure",
+      "confidence": "high",
+      "mechanism": "Raising the two-player training mixture to 90% and omitting league play overfit the observed pre-deadline matchmaking distribution; the top ladder later became four-player-heavy.",
+      "implementation": "Keep player-mode mixtures robust and evaluate against historical checkpoints or a league rather than one current opponent.",
+      "failure_conditions": [
+        "Online matchmaking and final evaluation distributions can differ",
+        "Multiplayer self-play can cycle strategically"
+      ],
+      "minimal_next_test": "Report a 2p/4p by opponent-checkpoint evaluation matrix before changing the training mixture.",
+      "evidence_anchors": [
+        "docs/write-up.md#balancing-two-player-and-four-player-modes"
+      ],
+      "artifact_ref": "configs/stateless_200m.yaml"
+    },
+    {
+      "id": "N003",
+      "title": "A hard mask for obviously bad launches reduced learned policy quality",
+      "verdict": "author_reported_observation_without_full_ablation",
+      "confidence": "low",
+      "mechanism": "Removing bad actions may also remove pressure to learn the underlying physics representation.",
+      "implementation": "Treat action masks as an ablation variable; the author later restored a mask for fine-tuning and inference rather than assuming one setting was universally best.",
+      "failure_conditions": [
+        "The observation is not independently quantified and may be confounded by training stage or hyperparameters"
+      ],
+      "minimal_next_test": "Run mask-on, mask-off and late-mask schedules with equal seeds and environment steps.",
+      "evidence_anchors": [
+        "docs/write-up.md#reinforcement-learning-with-proximal-policy-optimization"
+      ],
+      "artifact_ref": "configs/stateless_200m.yaml"
+    },
+    {
+      "id": "N004",
+      "title": "Three-bit compression did not justify a larger model",
+      "verdict": "author_reported_negative_result",
+      "confidence": "medium",
+      "mechanism": "Additional model capacity was outweighed by larger policy distortion from lower-bit quantization.",
+      "implementation": "Stop at four-bit NormalFloat after comparing the compressed policy head-to-head, not only by payload size.",
+      "failure_conditions": [
+        "The exact crossover depends on architecture, codebook, group size and inference kernel"
+      ],
+      "minimal_next_test": "Measure action agreement, value error, head-to-head win rate, size and latency for each bit-width.",
+      "evidence_anchors": [
+        "docs/write-up.md#navigating-submission-constraints"
+      ],
+      "artifact_ref": "python/owl/checkpoint_quantization.py"
+    },
+    {
+      "id": "N005",
+      "title": "The current repository snapshot is not an immutable copy of the exact winning submission",
+      "verdict": "provenance_boundary",
+      "confidence": "high",
+      "mechanism": "The public repository continued evolving after the competition solution, so later LoRA, reward and quantization features cannot automatically be credited to the submitted agent.",
+      "implementation": "Use docs/write-up.md for solution claims, pin commit a60ec580 for reproducibility, and require a tagged submission artifact before attributing later features to the winning run.",
+      "failure_conditions": [
+        "Attribution is unsafe when code history, checkpoint and packaged submission are not tied together"
+      ],
+      "minimal_next_test": "Compare a released submission archive or tag against the pinned repository tree.",
+      "evidence_anchors": [
+        "Repository HEAD metadata"
+      ],
+      "artifact_ref": "README.md"
+    }
+  ],
+  "best_solution_lineage": [
+    {
+      "stage": "correctness",
+      "change": "Small 1-5M models, target-based actions, Rust simulator parity and PPO smoke tests"
+    },
+    {
+      "stage": "scaling",
+      "change": "Increase transformer capacity and distributed self-play throughput"
+    },
+    {
+      "stage": "stabilization",
+      "change": "Last-best checkpoint gate plus teacher policy/value losses"
+    },
+    {
+      "stage": "deployment",
+      "change": "NF4 checkpoint, CPU int8, entity filtering and 5M overage fallback"
+    }
+  ],
+  "code_evidence": [
+    {
+      "id": "CE001",
+      "path": "python/owl/model/actor/discrete_targets.py",
+      "language": "python",
+      "symbol": "source-target action head",
+      "start_line": 550,
+      "end_line": 586,
+      "excerpt": "q = self.q(source_x)\n        k = self.k(target_x)\n        v = self.v(target_x)\n        target_logits = torch.einsum(\"bpsd,bptd->bpst\", q, k)\n        target_logits = target_logits / math.sqrt(self.head_dim)\n        if actor_inputs.pairwise_bias is not None:\n            pairwise_bias = actor_inputs.pairwise_bias\n            expected_bias_shape = (\n                (*target_logits.shape[:-1], action_entity_slots)\n                if self.config.launch_mode == \"target_token\"\n                else target_logits.shape\n            )\n            if pairwise_bias.shape != expected_bias_shape:\n                raise ValueError(\n                    \"discrete target pairwise bias must have shape \"\n                    f\"{tuple(expected_bias_shape)}, got {tuple(pairwise_bias.shape)}\"\n                )\n            if self.config.launch_mode == \"target_token\":\n                no_launch_bias = torch.zeros_like(pairwise_bias[..., :1])\n                pairwise_bias = torch.cat((pairwise_bias, no_launch_bias), dim=-1)\n            target_logits = target_logits + pairwise_bias.to(dtype=target_logits.dtype)\n        continue_logits = None\n        if self.continue_source_proj is not None and self.continue_head is not None:\n            launch_hidden = self.continue_source_proj(source_input)\n            continue_logits = self.continue_head(launch_hidden).squeeze(-1)\n        target_logits = target_logits.masked_fill(\n            ~can_act,\n            torch.finfo(target_logits.dtype).min,\n        )\n        safe_target_logits = torch.where(\n            can_act.any(dim=-1, keepdim=True),\n            target_logits,\n            torch.zeros_like(target_logits),\n        )\n        return DiscreteTargetSelectionParams(\n            target_logits=safe_target_logits,\n            target_values=v,",
+      "content_sha256": "7d2809015b7fb0319aebfec4c3ef97714c82c45a6cb6130e0488183cc31b1659",
+      "source_sha256": "3d50edc12d8223a40e786ab57bbfe50984c9497c1607a745ec2c08d47c23d84b",
+      "lesson_ids": ["L002"]
+    },
+    {
+      "id": "CE002",
+      "path": "python/owl/model/stateless_transformer_v1.py",
+      "language": "python",
+      "symbol": "shared entity token projections",
+      "start_line": 291,
+      "end_line": 328,
+      "excerpt": "self.static_planet_proj = ObservationInputStem(\n            self.obs_spec.planet_channels,\n            self.config,\n        )\n        self.orbit_planet_proj = ObservationInputStem(\n            self.obs_spec.planet_channels,\n            self.config,\n        )\n        self.fleet_proj = ObservationInputStem(\n            self.obs_spec.fleet_channels, self.config\n        )\n        self.comet_proj = ObservationInputStem(\n            self.obs_spec.comet_channels, self.config\n        )\n        self.global_proj = ObservationInputStem(\n            self.obs_spec.global_channels,\n            self.config,\n        )\n        self.player_feature_proj = (\n            None\n            if self.obs_spec.player_feature_channels == 0\n            else ObservationInputStem(\n                self.obs_spec.player_feature_channels,\n                self.config,\n            )\n        )\n        self.target_incoming_proj = (\n            None\n            if not self.obs_spec.uses_cross_attention\n            else ObservationInputStem(\n                self.obs_spec.target_incoming_channels,\n                self.config,\n            )\n        )\n        self.player_tokens = nn.Parameter(torch.empty(OUTER_PLAYER_SLOTS, dim))\n        self.board_tokens = nn.Parameter(torch.empty(self.config.n_scratch_tokens, dim))\n        self.actor_plan_tokens = nn.Parameter(torch.empty(OUTER_PLAYER_SLOTS, dim))\n        self.critic_value_tokens = nn.Parameter(torch.empty(OUTER_PLAYER_SLOTS, dim))",
+      "content_sha256": "70fb0899ff3ee718f1c9d016db5ac7298e38149e990e27b03d29932026cb459d",
+      "source_sha256": "7813781abfc949e449f2c2bc9152b47ef4126f7f1555e7c62409fc9cc4995ac7",
+      "lesson_ids": ["L003"]
+    },
+    {
+      "id": "CE003",
+      "path": "src/rules_engine/replay_tests.rs",
+      "language": "rust",
+      "symbol": "reference replay parity loop",
+      "start_line": 95,
+      "end_line": 134,
+      "excerpt": "fn replay_fixtures_match_reference_transitions() -> Result<(), Box<dyn Error>> {\n    if !require_parity_fixtures()? {\n        return Ok(());\n    }\n\n    let fixture_dir = fixture_dir();\n    let fixture_paths = fixture_paths(&fixture_dir)?;\n    if fixture_paths.is_empty() {\n        warn_or_fail_missing_fixtures(&fixture_dir)?;\n        return Ok(());\n    }\n\n    let mut coverage = REQUIRED_REPLAY_COVERAGE\n        .iter()\n        .map(|requirement| (requirement.episode_id, (0_usize, None)))\n        .collect::<std::collections::BTreeMap<_, _>>();\n    let mut checked_rows = 0;\n    for fixture_path in fixture_paths {\n        let file = File::open(&fixture_path)?;\n        let mut final_results = None;\n        for line in BufReader::new(file).lines() {\n            let line = line?;\n            if line.trim().is_empty() {\n                continue;\n            }\n\n            let row: FixtureRow = serde_json::from_str(&line)?;\n            let result = check_transition(&row)\n                .map_err(|message| format!(\"{} step {}: {message}\", row.episode_id, row.step))?;\n            final_results = Some((\n                row.episode_id,\n                row.step,\n                player_results_from_kaggle(&row).map_err(|message| {\n                    format!(\"{} step {}: {message}\", row.episode_id, row.step)\n                })?,\n                result,\n            ));\n            if let Some((rows, players)) = coverage.get_mut(&row.episode_id) {\n                *rows += 1;\n                if players.is_none() {",
+      "content_sha256": "b41387599666b6fa3e31d5ca98777a1010aa4e06ef04666cf179b4a3525e76a7",
+      "source_sha256": "25b6f84700c580ea84fca51771c9c08e986c2392095c06c1db6b96b7af1e9a3c",
+      "lesson_ids": ["L004"]
+    },
+    {
+      "id": "CE004",
+      "path": "scripts/run_ppo.py",
+      "language": "python",
+      "symbol": "last-best checkpoint gate",
+      "start_line": 410,
+      "end_line": 449,
+      "excerpt": "trainer.write_checkpoint(\n                        checkpoint_path,\n                        env_steps=env_steps,\n                        wandb_run_id=wandb_run_id,\n                    )\n                if last_best_model is None:\n                    raise RuntimeError(\"last_best_model must exist for checkpoints\")\n                last_best_checkpoint_path = run_dir / CHECKPOINT_LAST_BEST\n                if dist_ctx.is_main_process and not last_best_checkpoint_path.is_file():\n                    trainer.write_checkpoint(\n                        last_best_checkpoint_path,\n                        env_steps=start_env_steps,\n                        wandb_run_id=wandb_run_id,\n                        model=last_best_model,\n                    )\n                dist_ctx.barrier()\n                eval_metrics: dict[str, float] | None = None\n                if dist_ctx.is_main_process:\n                    eval_metrics = _evaluate_against_last_best(\n                        current_model=unwrap_model(trainer.model),\n                        last_best_model=last_best_model,\n                        cfg=cfg,\n                        device=trainer.device,\n                        replay_dir=(\n                            run_dir / \"eval_replays\" / checkpoint_path.stem\n                            if cfg.rl.eval_replay_games > 0\n                            else None\n                        ),\n                    )\n                eval_metrics = broadcast_object(eval_metrics, dist_ctx)\n                if eval_metrics is None:\n                    raise RuntimeError(\"missing broadcast eval metrics\")\n                logger.log(eval_metrics, step=env_steps)\n                replace_last_best = (\n                    eval_metrics[\"eval/win_rate_against_last_best\"]\n                    >= LAST_BEST_WIN_RATE_THRESHOLD\n                )\n                if replace_last_best:\n                    _refresh_eval_model_from_weights(\n                        last_best_model,",
+      "content_sha256": "a683663aa8ee063415e14952516e23148ee6e7cfe86a10b5096ceae19de1084b",
+      "source_sha256": "9941a86422dc4c70f9c8e3d78cad023e9c73c65f83dbbd1ce9987cbab1188783",
+      "lesson_ids": ["L005"]
+    },
+    {
+      "id": "CE005",
+      "path": "python/owl/checkpoint_quantization.py",
+      "language": "python",
+      "symbol": "NF4 group quantization",
+      "start_line": 812,
+      "end_line": 851,
+      "excerpt": "def _quantize_normalfloat_g128_lsq(\n    tensor: torch.Tensor,\n    bits: int,\n) -> tuple[torch.Tensor, torch.Tensor]:\n    _validate_normalfloat_bits(bits, \"normalfloat\", None)\n    tensor = tensor.to(torch.float32)\n    if tensor.ndim != 2:\n        raise ValueError(\"normal-float groupwise quantization requires 2D tensors\")\n    if not torch.isfinite(tensor).all().item():\n        raise ValueError(\"normal-float groupwise quantization requires finite tensors\")\n\n    rows, cols = tensor.shape\n    group_count = (cols + _NORMALFLOAT_GROUP_SIZE - 1) // _NORMALFLOAT_GROUP_SIZE\n    padded_cols = group_count * _NORMALFLOAT_GROUP_SIZE\n    padded = torch.zeros((rows, padded_cols), dtype=torch.float32, device=tensor.device)\n    padded[:, :cols] = tensor\n    groups = padded.reshape(rows * group_count, _NORMALFLOAT_GROUP_SIZE)\n    valid = torch.zeros((rows, padded_cols), dtype=torch.bool, device=tensor.device)\n    valid[:, :cols] = True\n    valid_groups = valid.reshape(rows * group_count, _NORMALFLOAT_GROUP_SIZE)\n\n    valid_abs_groups = torch.where(valid_groups, groups.abs(), torch.zeros_like(groups))\n    max_abs = valid_abs_groups.amax(dim=1, keepdim=True)\n    scale = max_abs\n    values = _normalfloat_values_for_bits(bits).to(device=tensor.device)\n    thresholds = _normalfloat_thresholds_for_bits(bits).to(device=tensor.device)\n    for _ in range(2):\n        safe_scale = torch.where(scale == 0, torch.ones_like(scale), scale)\n        codes = torch.bucketize(groups / safe_scale, thresholds).to(torch.long)\n        quantized = values[codes]\n        valid_quantized = torch.where(\n            valid_groups,\n            quantized,\n            torch.zeros_like(quantized),\n        )\n        valid_group_values = torch.where(valid_groups, groups, torch.zeros_like(groups))\n        denominator = (valid_quantized * valid_quantized).sum(dim=1, keepdim=True)\n        raw_improved = (valid_group_values * valid_quantized).sum(\n            dim=1, keepdim=True\n        ) / denominator",
+      "content_sha256": "715262d9f9c80e4e51185af20b51233d6184dfe203c0a84cd60cc973447369ca",
+      "source_sha256": "efb31c88ae9c6c5e5c4664ea52b06232ab8750deaae7973510f1432ef25172a3",
+      "lesson_ids": ["L006"]
+    }
+  ],
+  "reproducibility": {
+    "repository": "https://github.com/IsaiahPressman/kaggle-orbit-wars",
+    "code_version": "a60ec580758ba7fe89d334223924228697e51f86",
+    "commit_date": "2026-06-30T16:32:07-04:00",
+    "license": "MIT",
+    "python_version": "3.12",
+    "python_requirement": ">=3.11",
+    "rust_toolchain": "nightly-2026-04-18",
+    "package_manager": "uv",
+    "task_runner": "just",
+    "artifact_ref": "docs/write-up.md",
+    "known_gap": "Winning checkpoint and exact immutable submission archive are not bundled in this source snapshot."
+  },
+  "source_provenance": {
+    "author": "Isaiah Pressman / IsaiahP",
+    "verified_sources": [
+      "Kaggle official competition overview and evaluation",
+      "Kaggle 1st-place write-up and discussion",
+      "Public MIT-licensed GitHub repository",
+      "Current Kaggle leaderboard"
+    ],
+    "source_urls": [
+      "https://www.kaggle.com/competitions/orbit-wars",
+      "https://www.kaggle.com/competitions/orbit-wars/leaderboard",
+      "https://www.kaggle.com/competitions/orbit-wars/writeups/1st-place-solution-scaling-reinforcement-learnin",
+      "https://github.com/IsaiahPressman/kaggle-orbit-wars"
+    ],
+    "code_commit": "a60ec580758ba7fe89d334223924228697e51f86",
+    "captured_at": "2026-07-11",
+    "experiment_ids": []
+  },
+  "retrieval_keywords": [
+    "orbit wars",
+    "reinforcement learning",
+    "self play",
+    "pure self-play",
+    "PPO",
+    "GAE lambda",
+    "multi-agent",
+    "1v1",
+    "four-player FFA",
+    "opponent pool",
+    "league play",
+    "last-best checkpoint",
+    "teacher KL",
+    "value distillation",
+    "entity transformer",
+    "variable-length entities",
+    "structured action space",
+    "target selection",
+    "logistic mixture",
+    "Rust simulator",
+    "replay parity",
+    "Rayon vector environment",
+    "distributed PPO",
+    "DDP",
+    "NF4 quantization",
+    "int8 inference",
+    "fallback policy",
+    "latency budget",
+    "model scaling",
+    "opponent distribution shift",
+    "self-play overfitting",
+    "gamma stalling",
+    "action mask ablation",
+    "agentic coding",
+    "强化学习",
+    "自博弈",
+    "多智能体",
+    "环境加速",
+    "对手池",
+    "量化部署",
+    "结构化动作空间",
+    "动作空间分解",
+    "候选对象选择",
+    "目标实体选择",
+    "连续强度决策",
+    "连续数量决策",
+    "离散目标连续参数",
+    "源目标注意力",
+    "仿真器一致性",
+    "回放一致性验证",
+    "对手分布漂移",
+    "延迟超时回退"
+  ],
+  "review": {
+    "status": "reviewed",
+    "quality_status": "pass",
+    "score": 96,
+    "blockers": [],
+    "warnings": [
+      "The repository HEAD contains post-competition extensions; only write-up-backed features are attributed to the leading solution."
+    ],
+    "reviewer": "source-code-and-writeup-evidence-gate",
+    "checked_at": "2026-07-11T00:00:00+00:00"
+  }
+}

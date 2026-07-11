@@ -1,153 +1,191 @@
-# Recommended Output Schema
+# Output Schemas
 
-Use this schema when turning retrieved book hits into a useful Kaggle plan or expert-experience card.
-
-## Agentic Research Brief
+## Competition Decision Brief
 
 ```markdown
-## Competition Profile
+# Competition Decision Brief
+
+## Competition Contract
 - slug:
-- metric:
-- data signals:
+- prediction unit:
+- metric and direction:
+- modalities:
 - constraints:
-- inferred domains:
+- unresolved facts:
 
-## Algorithm Family Hypotheses
-| Family | Why Plausible | What To Check First |
-|---|---|---|
+## Validation Contract
+| Gate | Action | Pass Condition | Status |
+|---|---|---|---|
 
-## Historical Evidence Map
-| Rank | Source Case | Match Signal | Transferable Pattern | Anchor |
-|---:|---|---|---|---|
+## Evidence Coverage
+- confidence:
+- direct/near cases:
+- code/write-up coverage:
+- gaps:
 
-## Transferable Tricks
-- Trick:
-  Current-condition trigger:
-  Why it may work:
-  Implementation sketch:
-  Validation check:
-  Failure mode:
+## Evidence Map
+| Rank | Level | Historical Case | Matching Condition | Dangerous Mismatch | Anchor |
+|---:|---|---|---|---|---|
 
-## Code Evidence
-```python
-# Include only source-backed snippets that exist in extracted sections.
+## Cross-Competition Mechanism Bridges
+| Source Competition | Shared Mechanism | Surface-Type Difference | Transfer Test | Anchor |
+|---|---|---|---|---|
+
+## Source Competition Deep Dives
+- research id and status:
+- source competition and official page:
+- knowledge point:
+- original prediction unit/metric/split:
+- source-backed implementation, if available:
+- gain attribution and counterevidence:
+- transfer conditions:
+- failure conditions:
+- custom queries executed:
+- sources checked:
+
+## Current Research
+| Source | Current Method/Constraint | Why Relevant | License/Rule Check |
+|---|---|---|---|
+
+## Experiment Portfolio
+| ID | Parent | Component | Hypothesis | Isolated Change | Expected Diagnostic | Stop Condition | Cost |
+|---|---|---|---|---|---|---|---|
+
+## Next Action
+- mode:
+- action:
+- reason:
 ```
 
-## Experiment Queue
-1. Experiment:
-   Historical evidence:
-   Expected signal:
-   Validation:
-   Stop condition:
+## Experiment Record
+
+```json
+{
+  "id": "E03",
+  "parent_id": "E01",
+  "component": "features",
+  "hypothesis": "",
+  "change": "",
+  "evidence_anchors": [],
+  "research_ids": [],
+  "ablation_id": "A003",
+  "code_version": "git-commit-or-snapshot",
+  "data_version": "dataset-manifest-or-hash",
+  "config_hash": "",
+  "environment_hash": "",
+  "fold_version": "",
+  "metric_version": "",
+  "seeds": [42],
+  "params": {},
+  "status": "success|failed|discarded",
+  "cv_mean": null,
+  "cv_std": null,
+  "fold_scores": [],
+  "slice_metrics": {},
+  "lb_score": null,
+  "runtime_minutes": null,
+  "peak_memory": null,
+  "artifact": "",
+  "diagnosis": "",
+  "next_decision": "promote|refine|discard|branch"
+}
 ```
 
-## Competition Strategy Note
+## Ablation Registration
+
+```json
+{
+  "id": "A003",
+  "design": "ofat|factorial|negative_control|sensitivity",
+  "parent_experiment_id": "E01",
+  "component": "features",
+  "factor": "patient normalization",
+  "control": "disabled",
+  "treatment": "enabled",
+  "fixed_conditions": ["folds=v2", "seed_policy=42,43,44"],
+  "hypothesis": "",
+  "expected_signal": "",
+  "research_ids": ["R001"],
+  "status": "planned|running|completed|failed|discarded",
+  "decision": "pending|supported|partially_supported|not_supported|inconclusive"
+}
+```
+
+## Result Analysis Log
+
+```json
+{
+  "experiment_id": "E03",
+  "version": 1,
+  "verdict": "supported|partially_supported|not_supported|inconclusive",
+  "snapshot": {
+    "cv_delta": null,
+    "cv_std_delta": null,
+    "fold_deltas": [],
+    "fold_wins": 0,
+    "slice_deltas": {},
+    "runtime_minutes_delta": null,
+    "peak_memory_mb_delta": null
+  },
+  "mechanism": "",
+  "confounders": [],
+  "slice_findings": [],
+  "resource_tradeoff": "",
+  "next_action": ""
+}
+```
+
+## Comparative Reflection
 
 ```markdown
-## Competition Profile
-- slug:
-- task type:
-- metric:
-- data risks:
-- likely validation split:
-- closest book domains:
-
-## Retrieved Experience
-| Rank | Book Case | Why It Matches | Useful Pattern |
-|---:|---|---|---|
-
-## High-ROI Experiments
-1. Experiment:
-   Why:
-   Evidence:
-   Validation:
-   Risk:
-
-## Tricks To Try
-- Trick:
-  When it helps:
-  How to implement:
-  What to monitor:
-
-## Code Evidence
-```python
-# Include only code that exists in the extracted source.
+### Parent -> Child
+- Exact code/config difference:
+- Predicted diagnostic movement:
+- Observed mean/fold/slice movement:
+- Runtime/memory movement:
+- Supported mechanism:
+- Falsified hypothesis:
+- Remaining confounders:
+- Transfer conditions:
+- Next action:
 ```
 
-## Validation And Submission Checklist
-- Local validation:
-- Leakage checks:
-- Ablation:
-- Submission safety:
-```
-
-## Expert-Experience Card
+## Long-Term Experience Card
 
 ```markdown
 ### Title
 - domains:
-- algo_tags:
-- source_case:
-- competition_slug:
-- index_keywords:
-- problem_signals:
+- source or experiment provenance:
+- competition slug:
+- prediction unit:
+- metric family:
+- validation risks:
+- index keywords:
 
-**Essence**
+**Conditional lesson**
 
-**Why It Works**
+**Why it works**
 
-**When To Use**
+**When to use**
 
-**Implementation Pattern**
+**Implementation pattern**
 
-**Evidence**
+**Source-backed code**
 
-```python
-# Source-backed code snippet if available.
-```
+**Evidence and counterevidence**
 
-**Failure Modes**
+**Failure modes**
 
-**Practice Prompt**
-```
-
-## New Competition Collection Card
-
-```markdown
-## 1. source-name {#section-competition-source}
-
-> 比赛：[competition-slug](competition-url) · 来源：[source-name](source-url) · 类型：collected_experience
-
-- 算法标签:
-- 核心关键词:
-- tricks:
-- 代码证据:
-- 质量分:
-- 收集日期:
-
-### 摘要
-
-### 题面与风险画像
-- metric:
-- data_signals:
-- risk_signals:
-
-### Algorithm Family Hypotheses
-
-### 重点 Trick
-
-### Source Inventory
-| Kind | File | Size |
-|---|---|---:|
-
-### Evidence Notes
+**Minimal validation test**
 ```
 
 Rules:
 
-- Keep code evidence short and source-backed.
-- Prefer "what to try next" over generic description.
-- Infer algorithm families from the competition profile before trusting the user's initial wording.
-- Keep all local paths out of user-facing book or sale-ready notes.
-- When multiple cases agree on a tactic, state the repeated pattern explicitly.
-- New collection cards are staging artifacts; refine them with deeper code/write-up reading before treating them as final book chapters.
+- Never invent code evidence.
+- Do not promote a retrieved claim while its source research task is pending.
+- Keep public notes free of credentials and absolute local paths.
+- Preserve uncertainty and mismatches.
+- Prefer conditional mechanisms over generic tricks.
+- Keep staging cards separate from reviewed long-term memory.
+- Use `draft -> reviewed -> promoted/rejected` lifecycle states and invalidate review when card content changes.
+- Index promoted cards in the learned-experience catalog; keep raw experiment state as provenance rather than copying it wholesale.

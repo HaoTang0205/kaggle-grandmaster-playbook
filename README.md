@@ -2,167 +2,230 @@
 
 [中文说明](README.zh-CN.md)
 
-An agentic Kaggle research skill built from a local book of competition write-ups, high-score notebooks, code evidence, and transferable tricks.
+An evidence-driven Kaggle research and experiment-decision skill for AI agents. It turns historical high-score notebooks, write-ups and code evidence into a disciplined workflow: competition profiling, validation design, hybrid retrieval, source reranking, budget-aware experiments, comparative reflection and isolated memory.
 
-The goal is simple: when an AI agent sees a new Kaggle competition, it should not wait for the user to know the right algorithm. It should infer the competition shape, retrieve similar historical cases, rank the most useful evidence, turn that into experiment hypotheses, and collect new lessons back into the playbook.
+It does not guarantee medals or claim that installing a prompt makes an agent a Kaggle Grandmaster. Its purpose is to reduce avoidable mistakes, improve research quality and make experimentation reproducible.
 
-## Project Status
+## What Changed
 
-This repository is a working demo of an automated Kaggle research memory system, not a finished product or a hands-off competition solver. The current automation is intentionally simple: it uses heuristic domain inference, catalog retrieval, and staged experience-card collection so other users can inspect, fork, replace, and improve each part.
+- Infer task shape from competition facts and data rather than trusting the user's initial algorithm guess.
+- Profile real files, CSV/TSV/Parquet/Feather schemas, images, audio, text/replays, archives, target candidates, IDs, groups, timestamps and unused data sources.
+- Fuse a curated 173-entry catalog with a 2,708-entry full catalog covering roughly 613 competitions.
+- Repair full-catalog metadata that previously lost competition slugs, sources, quality and code evidence.
+- Use a low-memory fingerprinted SQLite FTS5 index, independent free-form query lenses, reciprocal-rank fusion, risk/mechanism/metric/source reranking and diversity selection.
+- Treat competition type as a soft prior and preserve cross-domain evidence through shared mechanisms and validation risks.
+- Accept repeated `--query` inputs and TXT/Markdown/JSON `--query-file` inputs without replacing them with a fixed taxonomy.
+- Turn retrieved knowledge points into source-competition deep dives covering official facts, original solutions, failures and transfer conditions.
+- Classify evidence as exact, direct, near, adjacent or analogy.
+- Require full-section reading before converting a hit into implementation advice.
+- Maintain parent/child experiments with hypotheses, isolated changes, diagnostics, costs and stop conditions.
+- Pre-register ablations and automatically project synchronized ablation, result and analysis reports per workspace.
+- Distill every finished competition through a draft/review/promotion gate into a third learned-experience index, including negative evidence.
+- Attach bounded code excerpts with relative paths, symbols, line ranges and source/excerpt hashes; external code promotion also requires repository, immutable commit and license.
+- Wrap every external section as untrusted evidence so write-ups, discussions and repositories cannot inject agent instructions.
+- Isolate each workspace with a `run_id`; mismatched agent windows cannot mutate the same ledger.
+- Ship ten ranked retrieval cases plus a no-Harness end-to-end skill evaluation and a relocation doctor.
 
-You are encouraged to adapt it to your own agent stack, crawler, LLM provider, vector database, reranker, evaluation set, and competition workflow. If you find better recall/ranking rules or a cleaner way to collect new high-quality competition experience, please open an issue or pull request.
+The current repository benchmark passes 10/10 cases with MRR 1.0 and Recall@5 1.0. This measures repository behavior, not Kaggle medal performance.
 
-## What This Is For
-
-- Autonomous Kaggle competition research.
-- Retrieving similar historical competitions from a book-derived catalog.
-- Inferring likely algorithm families from slug, metric, data schema, README, sample columns, or failure symptoms.
-- Extracting transferable tricks with source-backed code snippets when available.
-- Helping an AI agent produce a first experiment queue, validation plan, and risk checklist.
-- Collecting new competition write-ups/code/discussion notes into the same experience-card format.
-
-This project does not claim to produce winning solutions automatically. It is a memory and retrieval layer for agentic research.
-
-## Repository Layout
+## Architecture
 
 ```text
-kaggle-grandmaster-playbook/
-├── SKILL.md
-├── agents/openai.yaml
-├── scripts/
-│   ├── research_competition.py
-│   ├── collect_competition_experience.py
-│   ├── search_book_catalog.py
-│   ├── extract_book_section.py
-│   ├── build_book_catalog.py
-│   └── sanitize_public_book.py
-├── references/
-│   ├── grandmaster-agent-loop.md
-│   ├── chapter-map.md
-│   ├── search-rules.md
-│   └── output-schema.md
-├── assets/
-│   ├── kaggle_book_catalog.json
-│   └── kaggle_book_catalog_full.json
-├── book/book.md
-├── book/book.pdf
-└── book_full/book.md
+competition page/data
+        |
+        v
+profile_competition.py  -> profile, target/ID/group/time candidates, data-usage gate
+        |
+        v
+research_competition.py -> validation contract, custom/automatic evidence, source deep dives, experiments
+        |
+        +--> extract_book_section.py -> full source/code evidence
+        +--> live primary-source research
+        |
+        v
+competition_memory.py   -> isolated research tasks, ablations, analysis log, experiment tree
+        |
+        v
+Kaggle CLI / notebook / chosen runtime -> optional execution and submissions
+        |
+        v
+collect_competition_experience.py -> reviewed new memory -> rebuilt catalogs
+distill_competition_experience.py -> postmortem -> review gate -> learned catalog
 ```
 
 ## Quick Start
 
-Run an autonomous research brief from an incomplete competition profile:
+Profile local competition data:
+
+```powershell
+python scripts\profile_competition.py `
+  --data-dir "path\to\competition\data" `
+  --slug "competition-slug" `
+  --metric "AUC" `
+  --out "path\to\workspace\competition-profile.json"
+```
+
+Initialize isolated memory:
+
+```powershell
+python scripts\competition_memory.py init `
+  --workspace "path\to\workspace" `
+  --slug "competition-slug" `
+  --metric "AUC" `
+  --metric-direction higher
+```
+
+Set the returned `KAGGLE_GM_RUN_ID` command in the current agent window. In stateless agent calls, pass the returned value with `--run-id` on every mutating command.
+
+Build a decision brief:
 
 ```powershell
 python scripts\research_competition.py `
-  --description "CSV tabular binary classification with AUC, categorical columns, possible group leakage and public/private shift" `
-  --metric "AUC" `
-  --data "train.csv test.csv categorical numerical id" `
-  --limit 8
+  --profile "path\to\workspace\competition-profile.json" `
+  --query "Why did this help private LB but not grouped CV?" `
+  --query-file "path\to\workspace\questions.json" `
+  --stage intake `
+  --budget standard `
+  --limit 12 `
+  --json-out "path\to\workspace\decision-brief.json" `
+  --out "path\to\workspace\decision-brief.md"
 ```
 
-Run targeted retrieval after the first brief identifies a direction:
+Extract must-read evidence:
 
 ```powershell
-python scripts\search_book_catalog.py --auto --query "target encoding leakage grouped cv lightgbm auc" --limit 8
+python scripts\extract_book_section.py --anchor "section-or-auto-section-anchor" --max-chars 30000
 ```
 
-Extract a source section for deeper reading:
+Pre-register an ablation, then bind the treatment experiment to it:
 
 ```powershell
-python scripts\extract_book_section.py --anchor section-example-anchor --max-chars 25000
+python scripts\competition_memory.py plan-ablation `
+  --workspace "path\to\workspace" `
+  --id "A003" `
+  --parent-experiment "E01" `
+  --component features `
+  --factor "patient normalization" `
+  --control disabled `
+  --treatment enabled `
+  --fixed-condition "folds=v2" `
+  --hypothesis "Fold-safe normalization reduces site shift" `
+  --expected-signal "Unseen-site OOF improves without higher variance"
 ```
-
-Collect a new competition source folder into a playbook-compatible card:
 
 ```powershell
-python scripts\collect_competition_experience.py `
-  --source-dir data\new_competition_sources `
-  --out collected\new-competition-card.md `
-  --slug "competition-slug" `
-  --metric "AUC" `
-  --data "CSV categorical numerical group id"
+python scripts\competition_memory.py record `
+  --workspace "path\to\workspace" `
+  --id "E03" `
+  --parent-id "E01" `
+  --component features `
+  --hypothesis "Patient-normalized features reduce site shift" `
+  --change "Add fold-safe patient-wise z-score features" `
+  --ablation-id "A003" `
+  --status success `
+  --cv-mean 0.9132 `
+  --cv-std 0.0041 `
+  --runtime-minutes 18
 ```
-
-If your book file lives outside this repository:
 
 ```powershell
-$env:KAGGLE_GRANDMASTER_BOOK = "path\to\book.md"
-python scripts\build_book_catalog.py
+python scripts\competition_memory.py status --workspace "path\to\workspace"
+python scripts\competition_memory.py next --workspace "path\to\workspace"
+python scripts\competition_memory.py compare --workspace "path\to\workspace" --parent E01 --child E03
 ```
 
-## How The Agent Workflow Works
-
-1. Build a profile from whatever is available: slug, title, metric, data files, columns, target, constraints, or symptoms.
-2. Infer candidate domains: tabular, feature engineering, CV, NLP/LLM, audio, time series, ensemble, system, RL/game, or advanced topics.
-3. Generate multiple recall queries automatically instead of trusting one user keyword.
-4. Rank historical cases by modality fit, metric, validation hazards, source quality, code evidence, and exact competition matches.
-5. Extract only the best source sections before writing detailed advice.
-6. Produce an experiment queue with validation checks and failure modes.
-7. If the competition produces useful new write-ups/code, collect them into a reusable experience card and rebuild the catalog.
-
-For a more autonomous workflow, see `references/grandmaster-agent-loop.md`.
-
-## Book Artifacts
-
-- `book/book.md` is the compact polished book used for high-signal reading.
-- `book/book.pdf` is an exported reading copy.
-- `book_full/book.md` is the larger full archive for maximum recall.
-- `assets/kaggle_book_catalog.json` indexes the compact book.
-- `assets/kaggle_book_catalog_full.json` indexes the full archive.
-
-## Where The Book Came From
-
-The included book artifacts were generated from a local Kaggle research pipeline that collected public high-score notebooks, solution write-ups, discussion notes, code-derived analysis, and manual/LLM summaries into a structured markdown book. The catalog files are compact indexes extracted from those markdown books so an agent can search first and only open the most relevant sections.
-
-The book is also useful for personal study. You can read `book/book.md` or `book/book.pdf` directly as a Kaggle experience notebook, then use this skill to retrieve related cases while working on a new competition.
-
-Large files are intentional. If GitHub rejects future larger artifacts, use Git LFS for `*.pdf`, `*.docx`, and very large Markdown exports.
-
-## Current Limitations
-
-- The automated research loop is a demo/reference implementation. It should be customized before being trusted for serious competitions.
-- This project is still an early research skill, not a guaranteed autonomous Kaggle winner.
-- The crawler/downloader pipeline that produced the original book is not fully generalized here.
-- Some environments may need path, Python, encoding, or shell adjustments.
-- Ranking is heuristic and may miss good analogies or over-rank familiar patterns.
-- The new-competition collection script creates a first-pass card; deeper LLM analysis is still recommended before adding it to the final book.
-- The repository has not yet been adapted for every operating system, agent runtime, Kaggle account setup, or LLM API style.
-- Bugs are expected. Issues and ranking-failure examples are especially welcome.
-
-## Skill Usage
-
-Install or copy this folder into an agent skills directory, then invoke:
+## Agent Invocation
 
 ```text
-Use $kaggle-grandmaster-playbook to infer the competition shape, retrieve historical Kaggle expert patterns, and propose evidence-backed experiments.
+Use $kaggle-grandmaster-playbook to inspect this competition, lock validation, retrieve and rerank expert evidence, research current methods, and build a budget-aware experiment loop.
 ```
 
-The skill is designed for automated research. A user can provide a vague competition description, and the agent should still infer possible algorithm families before searching.
+Use Kaggle CLI, the regular Kaggle skill, notebooks or another runtime for downloads, execution and submissions. This repository intentionally has no Harness adapter and needs no LLM API.
+
+## Main Components
+
+| Path | Purpose |
+|---|---|
+| `scripts/grandmaster_core.py` | Profile inference, SQLite FTS5/RRF retrieval, risk reranking and experiment candidates |
+| `scripts/profile_competition.py` | Deterministic data-directory profiling and data-usage gate |
+| `scripts/research_competition.py` | Evidence-backed competition decision brief |
+| `scripts/search_book_catalog.py` | Targeted hybrid retrieval |
+| `scripts/extract_book_section.py` | Full evidence extraction by curated/full anchor |
+| `scripts/competition_memory.py` | Run isolation, source-research tasks, ablation matrix, result analysis and next-action policy |
+| `scripts/audit_pipeline.py` | Static leakage, split, data-usage, metric and reproducibility audit |
+| `scripts/evaluate_retrieval.py` | Ranked retrieval, provenance and latency benchmark |
+| `scripts/evaluate_skill.py` | Portable no-Harness end-to-end workflow evaluation |
+| `scripts/skill_doctor.py` | Python/FTS5/catalog/card/privacy/manifest portability checks |
+| `scripts/collect_competition_experience.py` | Staging cards for new competition knowledge |
+| `scripts/distill_competition_experience.py` | Post-competition distillation, quality review and learned-index promotion |
+| `scripts/build_book_catalog.py` | Catalog generation from Markdown books |
+
+The first full search builds a fingerprinted local cache. Catalog or indexed domain-vocabulary changes invalidate it automatically; ranking-only changes do not trigger needless rebuilds. `.cache/` is not committed. Retrieval weights, vocabulary extensions and deep-dive query templates can be overridden with `--policy` or `KAGGLE_GM_POLICY` instead of editing Python.
+
+Each workspace automatically contains `experiment_reports/ablation_matrix.csv`, `experiment_results.csv` and `experiment_analysis_log.md`. The JSON state remains the source of truth; these are synchronized views.
+
+After a competition, run `distill_competition_experience.py draft`, then `review`, then `promote`. Only hash-verified cards with mechanisms, provenance, transfer/failure conditions and analyzed experiments enter `knowledge_base/experience_cards/` and the default learned catalog. Failed and inconclusive experiments are preserved as negative lessons.
+
+## Portability
+
+Core scripts use Python 3.10+ and the standard library. Paths are resolved relative to the skill root. `KAGGLE_GM_CATALOGS`, `KAGGLE_GRANDMASTER_BOOK`, `KAGGLE_GM_KNOWLEDGE_BASE`, `KAGGLE_GM_CACHE_DIR` and `KAGGLE_GM_POLICY` can relocate the knowledge pack and writable cache. Use one workspace/run ID per competition. See `references/portability.md` for Windows, Linux/macOS and concurrent-agent guidance.
+
+## Test
+
+```text
+python -m unittest discover -s tests -v
+python scripts/evaluate_retrieval.py --strict
+python scripts/evaluate_skill.py --strict
+python scripts/skill_doctor.py --strict
+```
+
+Before executing generated code:
+
+```powershell
+python scripts\audit_pipeline.py --script path\to\train.py --profile path\to\competition-profile.json --strict
+```
+
+Add a benchmark case whenever a real competition reveals wrong-domain, wrong-risk or poor evidence ranking. Prefer measurable regression cases over one-off ranking patches.
+
+## Book And Catalogs
+
+- `book/book.md`: curated high-signal edition.
+- `book/book.pdf`: reading edition.
+- `book_full/book.md`: full archive.
+- `assets/kaggle_book_catalog.json`: curated catalog.
+- `assets/kaggle_book_catalog_full.json`: full catalog.
+- `assets/learned_experience_catalog.json`: reviewed local post-competition experience catalog.
+- `assets/knowledge-pack-manifest.json`: relative paths, roles, sizes and SHA-256 hashes for portable distribution.
+
+The catalogs index method keywords, problem signals, transfer scenarios and pattern families in addition to titles, tags, tricks and summaries.
+
+## Research Basis
+
+See `references/research-foundations.md` for primary sources and design consequences. The workflow incorporates ideas from MLE-Bench, MLE-STAR, AIDE, MARS, Gome, AutoKaggle, MLAgentBench and Agent K: task-specific retrieval, component ablation, branch search, structured diagnostic feedback, budget planning, leakage/data-usage checks, unit tests and comparative memory.
+
+## Boundaries
+
+- The 10/10 benchmark and end-to-end fixture validate repository behavior, not medal rate.
+- Deterministic profiling covers common tabular and multimodal assets; specialized medical, graph, database and simulator semantics still require inspection.
+- Final evidence reranking depends on the calling model, but now follows an explicit comparison/rejection contract.
+- This repository does not bundle a universal LLM API runner.
+- External data, pretrained weights and code must comply with competition rules and licenses.
 
 ## Contributing
 
-Feedback is very welcome. Useful contributions include:
+High-value contributions include:
 
-- Better domain inference rules.
-- Improved ranking features for modality fit, validation hazards, or code evidence.
-- Small benchmark sets that show when retrieval/ranking succeeds or fails.
-- Integrations with Kaggle CLI outputs, browser-collected write-ups, notebook exports, or vector search.
-- New Kaggle cases with clean metadata.
-- Corrections to extracted tricks or source attribution.
-- Scripts for converting more notebook/code artifacts into analyzable Python.
-- Better public-safe book sanitization and export workflows.
-- Examples of new competition collection cards and ranking-failure cases.
+- Retrieval failures with expected results.
+- Better metric and validation-risk inference.
+- New modality/data profilers.
+- Source-backed winning-solution cards.
+- Experiment scheduling and comparative-memory improvements.
+- Reproducible evaluations on MLE-Bench or real Kaggle tasks.
 
-Please open an issue with examples: input competition profile, expected retrieved cases, actual retrieved cases, and why the ranking should change.
+An issue should ideally include the input profile, expected evidence, actual evidence, failure analysis and a testable acceptance criterion.
 
-## Safety Notes
+## Safety And Licensing
 
-- Do not commit API keys, Kaggle credentials, cookies, or local account files.
-- Public book exports should be sanitized before publishing.
-- Treat retrieved tricks as historical evidence, not leaderboard guarantees.
-- Respect Kaggle competition rules and dataset licenses.
-
-## License
-
-Code and scripts are released under the repository code license. Book artifacts are separate content assets; see `CONTENT_LICENSE.md` before copying, redistributing, or using them commercially.
+- Never commit API keys, Kaggle credentials, cookies or absolute private paths.
+- Respect Kaggle rules, dataset licenses, notebook licenses and external-data restrictions.
+- Code and book content have separate licensing boundaries; see `CONTENT_LICENSE.md`.

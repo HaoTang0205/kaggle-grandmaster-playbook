@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import urlsplit, urlunsplit
 
 
 SKILL_DIR = Path(__file__).resolve().parents[1]
@@ -43,11 +45,20 @@ class CatalogEntry:
     source: str
     source_url: str
     source_type: str
+    provenance_status: str
+    trust_level: str
+    source_license: str
+    source_content_sha256: str
+    code_evidence_status: str
     tricks_count: int | None
     code_evidence_count: int | None
     quality_score: int | None
     algo_tags: list[str]
     core_keywords: list[str]
+    method_keywords: list[str]
+    problem_signals: list[str]
+    transfer_scenarios: list[str]
+    pattern_families: list[str]
     trick_highlights: list[str]
     summary: str
     searchable_text: str
@@ -55,6 +66,34 @@ class CatalogEntry:
 
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def safe_url(value: str) -> str:
+    parsed = urlsplit((value or "").strip().rstrip(")"))
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        return ""
+    return urlunsplit((parsed.scheme, parsed.netloc, parsed.path, "", ""))
+
+
+def source_url_from_section(section: str, source: str, source_type: str) -> str:
+    for match in re.finditer(r"(?im)^\s*-\s*(?:url|source_url)\s*:\s*(https?://\S+)", section):
+        url = safe_url(match.group(1))
+        if url:
+            return url
+    if source_type == "analysis" and re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", source or ""):
+        return f"https://www.kaggle.com/code/{source}"
+    if source_type == "analysis" and re.fullmatch(r"[A-Za-z0-9_.-]+__[A-Za-z0-9_.-]+", source or ""):
+        owner, kernel = source.split("__", 1)
+        return f"https://www.kaggle.com/code/{owner}/{kernel}"
+    return ""
+
+
+def competition_url_for(slug: str, explicit_url: str) -> str:
+    if safe_url(explicit_url):
+        return safe_url(explicit_url)
+    if re.fullmatch(r"[a-z0-9-]+", slug or ""):
+        return f"https://www.kaggle.com/competitions/{slug}"
+    return ""
 
 
 def first_existing_book() -> Path:
@@ -144,6 +183,26 @@ def extract_prefixed(section: str, label: str) -> str:
     return clean_line(match.group(1)) if match else ""
 
 
+def extract_first_prefixed(section: str, *labels: str) -> str:
+    for label in labels:
+        value = extract_prefixed(section, label)
+        if value:
+            return value
+    return ""
+
+
+def extract_repeated_prefixed(section: str, label: str, limit: int = 30) -> list[str]:
+    escaped = re.escape(label)
+    values = []
+    for match in re.finditer(rf"^\s*-\s*{escaped}\s*[:：]\s*(.+)$", section, flags=re.MULTILINE | re.IGNORECASE):
+        value = clean_line(match.group(1))
+        if value and value not in values:
+            values.append(value)
+        if len(values) >= limit:
+            break
+    return values
+
+
 def parse_metadata(section: str) -> dict[str, str]:
     for line in section.splitlines():
         if line.startswith("> ") and ("比赛：" in line or "比赛:" in line) and ("来源：" in line or "来源:" in line):
@@ -201,16 +260,16 @@ def summarize_section(section: str) -> str:
 
 
 def extract_tricks(section: str) -> list[str]:
-    value = extract_prefixed(section, "重点 trick")
-    if value:
-        return split_csvish(value)[:20]
-
     tricks: list[str] = []
     for match in re.finditer(r"^######\s+\d+\)\s+(.+)$", section, flags=re.MULTILINE):
         tricks.append(clean_line(match.group(1)))
         if len(tricks) >= 20:
             break
-    return tricks
+    if tricks:
+        return tricks
+
+    value = extract_prefixed(section, "重点 trick")
+    return split_csvish(value)[:20] if value else []
 
 
 def parse_entries(text: str) -> list[CatalogEntry]:
@@ -225,12 +284,18 @@ def parse_entries(text: str) -> list[CatalogEntry]:
         competition_slug, competition_url = strip_md_link(meta.get("比赛", ""))
         source, source_url = strip_md_link(meta.get("来源", ""))
         source_type = meta.get("类型", "")
+        competition_url = competition_url_for(competition_slug, competition_url)
+        source_url = safe_url(source_url) or source_url_from_section(section, source, source_type)
         tricks_count = parse_int(meta.get("tricks"))
         code_evidence_count = parse_int(meta.get("代码证据") or meta.get("代码证据条数"))
         quality_score = parse_int(meta.get("质量分"))
 
         algo_tags = split_csvish(extract_prefixed(section, "算法标签"))
         core_keywords = split_csvish(extract_prefixed(section, "核心关键词"))
+        method_keywords = split_csvish(extract_first_prefixed(section, "Method Keywords", "方法关键词"))
+        problem_signals = split_csvish(extract_first_prefixed(section, "Problem Signals", "问题信号"))
+        transfer_scenarios = split_csvish(extract_first_prefixed(section, "Transfer Scenarios", "迁移场景"))
+        pattern_families = extract_repeated_prefixed(section, "pattern_family")
         trick_highlights = extract_tricks(section)
         summary = summarize_section(section)
 
@@ -244,6 +309,10 @@ def parse_entries(text: str) -> list[CatalogEntry]:
             source_type,
             " ".join(algo_tags),
             " ".join(core_keywords),
+            " ".join(method_keywords),
+            " ".join(problem_signals),
+            " ".join(transfer_scenarios),
+            " ".join(pattern_families),
             " ".join(trick_highlights),
             summary,
         ]
@@ -259,11 +328,20 @@ def parse_entries(text: str) -> list[CatalogEntry]:
                 source=source,
                 source_url=source_url,
                 source_type=source_type,
+                provenance_status="linked_unverified" if source_url else "unlinked",
+                trust_level="untrusted_external",
+                source_license="unknown",
+                source_content_sha256=hashlib.sha256(section.encode("utf-8")).hexdigest(),
+                code_evidence_status="derived_claim" if code_evidence_count else "none",
                 tricks_count=tricks_count,
                 code_evidence_count=code_evidence_count,
                 quality_score=quality_score,
                 algo_tags=algo_tags,
                 core_keywords=core_keywords,
+                method_keywords=method_keywords,
+                problem_signals=problem_signals,
+                transfer_scenarios=transfer_scenarios,
+                pattern_families=pattern_families,
                 trick_highlights=trick_highlights,
                 summary=summary,
                 searchable_text=" ".join(searchable_parts).lower(),
@@ -283,8 +361,10 @@ def main() -> None:
     entries = parse_entries(text)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     payload = {
+        "schema_version": 2,
         "built_at_utc": utc_now(),
         "book_name": book.name,
+        "book_sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
         "entry_count": len(entries),
         "entries": [asdict(entry) for entry in entries],
     }

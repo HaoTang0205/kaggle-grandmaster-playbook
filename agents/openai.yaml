@@ -1,4 +1,6 @@
 interface:
   display_name: "Kaggle Grandmaster Playbook"
-  short_description: "Agentic Kaggle experience retrieval"
-  default_prompt: "Use $kaggle-grandmaster-playbook to infer the competition shape, retrieve historical Kaggle expert patterns, and propose evidence-backed experiments."
+  short_description: "Portable evidence-driven Kaggle research skill"
+  default_prompt: "Use $kaggle-grandmaster-playbook to inspect this competition, lock validation, retrieve custom and cross-domain evidence, verify source competitions, manage isolated ablations and write reviewed lessons back into memory."
+policy:
+  allow_implicit_invocation: true

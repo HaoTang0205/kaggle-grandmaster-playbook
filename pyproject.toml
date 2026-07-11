@@ -1,0 +1,27 @@
+[project]
+name = "kaggle-grandmaster-playbook"
+version = "0.2.0"
+description = "Portable evidence-driven Kaggle research, retrieval, experiment memory, and post-competition distillation skill"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [{ name = "HaoTang0205" }]
+keywords = ["kaggle", "machine-learning", "agent-skill", "experiment-tracking", "retrieval"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+]
+
+[project.optional-dependencies]
+profilers = [
+  "pillow>=10",
+  "pyarrow>=14",
+  "pydicom>=2.4",
+]
+
+[tool.kaggle-grandmaster-playbook]
+entrypoint = "SKILL.md"
+core_dependencies = "python-standard-library-only"
+execution_adapter = "none"

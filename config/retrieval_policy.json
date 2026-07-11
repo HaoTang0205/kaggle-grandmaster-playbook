@@ -1,0 +1,84 @@
+{
+  "version": 1,
+  "lens_weights": {
+    "user_query": 1.9,
+    "exact_competition": 2.4,
+    "task_shape": 1.5,
+    "modality_transfer": 1.25,
+    "metric_behavior": 1.05,
+    "validation_risk": 1.45,
+    "mechanism_transfer": 1.15,
+    "data_and_validation_gate": 1.65,
+    "reliable_baseline": 1.25,
+    "final_inference": 1.35,
+    "implementation": 0.85,
+    "ensemble_intake": 0.25,
+    "ensemble_improve": 0.65,
+    "ensemble_stage": 1.25
+  },
+  "ranking": {
+    "rrf_k": 45.0,
+    "risk_bonus": 3.2,
+    "mechanism_bonus": 2.6,
+    "cross_modal_penalty": 7.0,
+    "cross_modal_shared_mechanism_penalty": 0.75,
+    "curated_bonus": 1.8,
+    "learned_bonus": 1.4,
+    "candidate_multiplier": 2,
+    "minimum_candidate_pool": 96,
+    "mechanism_bridge_limit": 3,
+    "max_custom_queries": 20
+  },
+  "deep_dive": {
+    "top_competitions": 0,
+    "knowledge_points_per_competition": 3,
+    "require_official_page": true,
+    "require_multiple_sources": true,
+    "query_templates": [
+      "{slug} official competition overview data evaluation metric rules",
+      "site:kaggle.com/competitions/{slug}/writeups {knowledge_point}",
+      "site:kaggle.com/code {slug} validation solution {knowledge_point}",
+      "{slug} top solution ablation failure analysis {knowledge_point}"
+    ],
+    "required_questions": [
+      "What was the original prediction unit, metric, data split, and leakage boundary?",
+      "What change produced the gain, and what evidence or ablation supports that attribution?",
+      "Where is the implementation in code or pseudocode?",
+      "What failed, and under which constraints did the technique stop working?",
+      "Which causal conditions are shared with the current competition, and which are not?"
+    ]
+  },
+  "risk_mechanism_map": {
+    "group_leakage": ["group_aware_validation"],
+    "temporal_leakage": ["temporal_causality"],
+    "duplicate_leakage": ["duplicate_control"],
+    "spatial_leakage": ["group_aware_validation", "duplicate_control"],
+    "distribution_shift": ["distribution_robustness"],
+    "class_imbalance": ["imbalance_and_rare_events"],
+    "label_noise": ["weak_supervision_and_noise"],
+    "public_lb_overfit": ["distribution_robustness"],
+    "metric_mismatch": ["postprocessing_and_calibration"]
+  },
+  "mechanism_phrases": {
+    "group_aware_validation": ["group split", "group kfold", "patient split", "recording split", "entity leakage", "分组验证", "患者划分", "实体泄漏"],
+    "temporal_causality": ["temporal split", "forward validation", "future leakage", "lag feature", "时间切分", "前向验证", "未来泄漏"],
+    "duplicate_control": ["duplicate", "near duplicate", "deduplication", "hash split", "重复样本", "近重复", "去重"],
+    "distribution_robustness": ["distribution shift", "adversarial validation", "domain shift", "public private shift", "分布漂移", "对抗验证", "公榜私榜"],
+    "imbalance_and_rare_events": ["class imbalance", "long tail", "rare class", "resampling", "类别不平衡", "长尾", "稀有类别"],
+    "weak_supervision_and_noise": ["label noise", "weak label", "weak labels", "pseudo label", "self distillation", "标签噪声", "弱标签", "伪标签", "自蒸馏"],
+    "representation_transfer": ["pretrained backbone", "embedding", "spectrogram", "feature representation", "预训练", "表示学习", "特征表示"],
+    "augmentation_and_invariance": ["augmentation", "tta", "symmetry", "mixup", "cutmix", "数据增强", "测试时增强", "对称性"],
+    "postprocessing_and_calibration": ["postprocessing", "threshold", "calibration", "connected components", "后处理", "阈值", "校准", "连通域"],
+    "ensemble_diversity": ["oof blend", "stacking", "prediction correlation", "rank average", "oof 融合", "stacking", "预测相关性"],
+    "compute_efficiency": ["mixed precision", "quantization", "onnx", "openvino", "batch inference", "memory optimization", "混合精度", "量化", "推理加速", "显存优化"],
+    "candidate_generation_and_reranking": ["candidate generation", "reranking", "retrieval", "hard negative", "候选生成", "重排序", "困难负样本"],
+    "simulation_and_opponent_evaluation": ["self play", "opponent pool", "replay evaluation", "simulation harness", "自博弈", "对手池", "回放评估", "仿真环境"],
+    "structured_action_factorization": ["structured action space", "factorized action", "target selection", "parameterized action", "candidate then magnitude", "结构化动作空间", "动作空间分解", "候选对象选择", "目标选择", "连续强度", "离散目标连续参数"],
+    "simulator_parity": ["simulator parity", "replay parity", "reference transition", "environment equivalence", "仿真器一致性", "回放一致性", "环境等价", "参考转移"],
+    "deployment_fallback": ["fallback policy", "fallback model", "latency fallback", "timeout fallback", "graceful degradation", "回退策略", "备用模型", "延迟回退", "超时降级"]
+  },
+  "domain_extensions": {},
+  "risk_extensions": {
+    "label_noise": ["weak labels"]
+  }
+}

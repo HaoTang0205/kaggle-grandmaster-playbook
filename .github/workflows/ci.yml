@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    name: Unit (${{ matrix.os }}, py${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.10", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Compile
+        run: python -m compileall -q scripts tests
+      - name: Unit tests
+        run: python -m unittest discover -s tests -v
+
+  portable-e2e:
+    name: Portable no-Harness evaluation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Verify skill and knowledge pack
+        run: |
+          python scripts/build_knowledge_manifest.py --check
+          python scripts/skill_doctor.py --strict
+      - name: Retrieval quality and latency
+        run: python scripts/evaluate_retrieval.py --strict --max-p95-ms 5000
+      - name: End-to-end skill workflow
+        run: python scripts/evaluate_skill.py --strict

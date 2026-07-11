@@ -5,8 +5,11 @@ import os
 import re
 from pathlib import Path
 
+from evidence_safety import wrap_untrusted_evidence
+
 
 BOOK_ENV_VARS = ("KAGGLE_GRANDMASTER_BOOK", "KAGGLE_EXPERIENCE_BOOK")
+KNOWLEDGE_BASE_ENV = "KAGGLE_GM_KNOWLEDGE_BASE"
 
 
 def env_book_path() -> Path | None:
@@ -36,8 +39,33 @@ def split_sections(text: str) -> list[tuple[str, str]]:
     return sections
 
 
-def first_existing_book() -> Path:
-    for path in DEFAULT_BOOKS:
+def first_existing_book(anchor: str = "") -> Path:
+    if anchor.startswith("experience-"):
+        card_id = anchor.removeprefix("experience-")
+        skill_dir = Path(__file__).resolve().parents[1]
+        configured = Path(os.environ[KNOWLEDGE_BASE_ENV]) if os.environ.get(KNOWLEDGE_BASE_ENV) else None
+        candidates = [
+            configured / f"{card_id}.md" if configured else None,
+            skill_dir / "knowledge_base" / "experience_cards" / f"{card_id}.md",
+            Path.cwd() / "knowledge_base" / "experience_cards" / f"{card_id}.md",
+        ]
+        for path in candidates:
+            if path and path.exists():
+                return path
+        raise FileNotFoundError(
+            f"Could not find reviewed experience card {card_id}. Set {KNOWLEDGE_BASE_ENV} to its directory."
+        )
+    candidates = DEFAULT_BOOKS
+    if anchor.startswith("auto-section-"):
+        skill_dir = Path(__file__).resolve().parents[1]
+        candidates = [
+            env_book_path(),
+            skill_dir / "book_full" / "book.md",
+            Path.cwd() / "book_full" / "book.md",
+            skill_dir / "book" / "book.md",
+            Path.cwd() / "book" / "book.md",
+        ]
+    for path in candidates:
         if path and path.exists():
             return path
     raise FileNotFoundError("Could not find book.md. Set KAGGLE_GRANDMASTER_BOOK to the markdown book path.")
@@ -74,12 +102,19 @@ def main() -> None:
     parser.add_argument("--anchor", required=True, help="Section anchor returned by search_book_catalog.py.")
     parser.add_argument("--book", type=Path, default=None)
     parser.add_argument("--max-chars", type=int, default=20000)
+    parser.add_argument(
+        "--raw",
+        action="store_true",
+        help="Print unwrapped source text for human inspection only. Agent workflows must use the default boundary.",
+    )
     args = parser.parse_args()
 
-    book = args.book or first_existing_book()
+    book = args.book or first_existing_book(args.anchor)
     section = extract_by_anchor(read_text(book), args.anchor)
     if args.max_chars and len(section) > args.max_chars:
         section = section[: args.max_chars] + "\n\n[truncated]"
+    if not args.raw:
+        section = wrap_untrusted_evidence(section, source=book.name, anchor=args.anchor)
     print(section)
 
 

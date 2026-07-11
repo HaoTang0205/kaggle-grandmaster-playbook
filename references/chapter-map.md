@@ -22,11 +22,11 @@ Domain aliases accepted by the search script:
 | `table`, `gbdt`, `lgbm`, `xgb`, `catboost` | `tabular` |
 | `nlp`, `llm`, `text`, `rag`, `retrieval` | `nlp_llm` |
 | `vision`, `image`, `computer vision`, `segmentation`, `detection` | `cv_vision` |
-| `time`, `forecast`, `sensor`, `sequence` | `timeseries` |
+| `forecast`, `sensor` | `timeseries` |
 | `speech`, `sound`, `birdclef` | `audio` |
 | `oof`, `stacking`, `blend`, `pseudo` | `ensemble` |
-| `repro`, `submit`, `kernel`, `engineering` | `system` |
-| `rl`, `game`, `agent`, `bandit` | `rl_game` |
+| `submit`, `kernel`, `engineering` | `system` |
+| `rl`, `game`, `bandit` | `rl_game` |
 
 Practical routing:
 

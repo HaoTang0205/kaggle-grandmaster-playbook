@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "pack_name": "kaggle-grandmaster-playbook-knowledge",
+  "portability": {
+    "paths": "relative_to_skill_root",
+    "catalog_override_env": "KAGGLE_GM_CATALOGS",
+    "book_override_env": "KAGGLE_GRANDMASTER_BOOK",
+    "knowledge_base_override_env": "KAGGLE_GM_KNOWLEDGE_BASE",
+    "cache_override_env": "KAGGLE_GM_CACHE_DIR"
+  },
+  "distribution": {
+    "github_single_blob_hard_limit_bytes": 100000000,
+    "release_or_lfs_recommended_from_bytes": 90000000,
+    "full_archive_is_optional": true
+  },
+  "files": [
+    {
+      "path": "book/book.md",
+      "role": "curated_book",
+      "required_for_core": true,
+      "size_bytes": 12510676,
+      "sha256": "b701ed829a9aa0332d9fec4bac83da81651612d9575a7fe7bb5d0dde6b14a338"
+    },
+    {
+      "path": "book/book.pdf",
+      "role": "reading_edition",
+      "required_for_core": false,
+      "size_bytes": 32145587,
+      "sha256": "6719ea4a79d042277cad75eaa62e8ced86907dd85d639f7b1d783f320985cfa4"
+    },
+    {
+      "path": "book_full/book.md",
+      "role": "full_archive",
+      "required_for_core": false,
+      "size_bytes": 85680551,
+      "sha256": "e4208cc61f2ed7b40d2804504f20b361d9a73d154375348e2b5752ec4507cf6d"
+    },
+    {
+      "path": "assets/kaggle_book_catalog.json",
+      "role": "curated_catalog",
+      "required_for_core": true,
+      "size_bytes": 3490124,
+      "sha256": "8efb5f46aa32a47813913bb6ebd1b8a23d6229b5fd15980fb01345f6fff7ae60"
+    },
+    {
+      "path": "assets/kaggle_book_catalog_full.json",
+      "role": "full_catalog",
+      "required_for_core": false,
+      "size_bytes": 29861027,
+      "sha256": "2e959649615ff79b789fd1510677f6b73eb0662e9214c43f88d0e04df56b8fe9"
+    },
+    {
+      "path": "assets/learned_experience_catalog.json",
+      "role": "learned_catalog",
+      "required_for_core": true,
+      "size_bytes": 12342,
+      "sha256": "d54140af76997985c0603ae90018063a8bdeae4333cdcf6cd625ea4bfa21d06c"
+    },
+    {
+      "path": "CONTENT_LICENSE.md",
+      "role": "license_boundary",
+      "required_for_core": true,
+      "size_bytes": 772,
+      "sha256": "049d3293357fb1d5094740c6654f38b21fb6dff6af43847774ef4d54bd9f798f"
+    },
+    {
+      "path": "knowledge_base/experience_cards/orbit-wars-1st-place-scaling-rl-a60ec580.json",
+      "role": "reviewed_experience_card",
+      "required_for_core": true,
+      "size_bytes": 34670,
+      "sha256": "0caefe9cb517f925358b48b7ba85db9cdb53919667e25d36850306c7a6efa2d4"
+    },
+    {
+      "path": "knowledge_base/experience_cards/orbit-wars-1st-place-scaling-rl-a60ec580.md",
+      "role": "reviewed_experience_card",
+      "required_for_core": true,
+      "size_bytes": 8746,
+      "sha256": "fda2690562ad877b1424707b5b671a7a2f91986b4b5e50f5437d59ed117a70d2"
+    }
+  ]
+}
